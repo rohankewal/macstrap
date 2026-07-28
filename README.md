@@ -1,106 +1,337 @@
 # Macstrap
 
 A single script that sets up a curated macOS dev environment — window
-manager, launcher, terminal, editor — and lets you switch color themes
-across all of it (terminal, editor, menu bar) from one command.
+manager, launcher, terminal, shell, editor — and lets you switch color themes
+across all of it from one command.
 
 Inspired by [Omarchy](https://learn.omacom.io)'s "one script, fully themed
 machine" idea for Linux/Hyprland, rebuilt around what actually works on
 macOS.
 
-## Quickstart
-
 ```sh
-git clone <this-repo> macstrap && cd macstrap
-./install.sh            # add --dry-run to preview every change first
+git clone https://github.com/rohankewal/macstrap.git ~/macstrap
+cd ~/macstrap
+./install.sh --dry-run    # see every change first
+./install.sh              # then do it
 ```
 
-The installer asks two questions up front — which **multiplexer** (tmux or
-herdr) and which **shell** (Oh My Zsh, fish, Nushell, or none). Skip the
-prompts with `./install.sh --multiplexer=herdr --shell=fish`. Non-interactive
-runs default to tmux and to leaving your shell alone.
+---
+
+## Should you use this?
+
+**Macstrap is for you if** you're setting up a new Mac (or want to
+re-standardize an old one), you like tiling window managers and terminal-first
+workflows, and you want one command to re-theme everything instead of editing
+six config files whenever you get bored of your colors.
+
+**Skip it if** any of these are true:
+
+- **You don't want a tiling window manager.** yabai and skhd are the core of
+  this, not optional extras. If you're happy with macOS window management,
+  most of the value here isn't for you.
+- **You have a dotfiles setup you like.** Macstrap wants to own a specific
+  slice of your config. It's careful about it (see [Safety
+  model](#safety-model)), but there's no point fighting a setup that already
+  works.
+- **You need this to be reproducible across machines today.** There's no
+  secrets management, no per-machine profiles, no CI. It's a personal-machine
+  bootstrapper.
+- **You can't restart your machine or touch SIP.** The full yabai experience
+  (window borders, opacity) needs a partial SIP disable. Everything else works
+  without it, but you should know that going in.
+
+**When to run it:** on a fresh Mac, ideally before you've customized much —
+Macstrap backs up anything it displaces, but a clean machine means fewer
+surprises. Re-running it later is always safe; it's idempotent by design.
+
+## Requirements
+
+| | |
+| --- | --- |
+| OS | macOS. `install.sh` refuses to run anywhere else. |
+| Chip | Apple Silicon or Intel — the Homebrew prefix is detected, not hardcoded. |
+| Homebrew | If missing, the installer offers to run the official install script. |
+
+You'll also need to be comfortable granting Accessibility permissions to yabai
+and skhd — macOS will prompt, and they can't control windows without it.
+
+---
+
+## Installing
+
+### 1. Clone it somewhere permanent
+
+```sh
+git clone https://github.com/rohankewal/macstrap.git ~/macstrap
+cd ~/macstrap
+```
+
+> **This directory has to stay put.** Macstrap works by symlinking into it —
+> `~/.macstrap/bin` points at `bin/`, and every active theme file points into
+> `themes/`. Move or delete the clone and your configs break. `~/macstrap` or
+> `~/.config/macstrap` are both fine; Downloads is not.
+
+### 2. Preview everything
+
+```sh
+./install.sh --dry-run
+```
+
+Prints every symlink, appended line, and package it *would* touch, and changes
+nothing. Worth reading once so nothing below is a surprise.
+
+### 3. Run it
+
+```sh
+./install.sh
+```
+
+You'll be asked two questions up front. Both are remembered, both are
+changeable later, and both can be skipped:
+
+```sh
+./install.sh --multiplexer=herdr --shell=fish
+```
+
+| Question | Options | Default if you just hit enter |
+| --- | --- | --- |
+| Multiplexer | `tmux`, `herdr` | `tmux` |
+| Shell | `omz`, `fish`, `nushell`, `none` | `omz` |
+
+Non-interactive runs (piped stdin, CI) default to `tmux` and `none` — the
+choices that install the least and touch nothing personal.
+
+Then it works through, in order:
+
+1. **Homebrew** — installs it if missing (asks first).
+2. **Packages** — `brew/Brewfile.core`, plus a Brewfile for each of your two
+   choices. Only what you picked gets installed.
+3. **Oh My Zsh** — if you chose it. Asks before running its installer, and
+   passes `--unattended --keep-zshrc` so it won't change your login shell or
+   replace an existing `~/.zshrc`.
+4. **`~/.macstrap`** — the stable path everything else points at.
+5. **Base configs** — symlinks for yabai, skhd, sketchybar, Neovim, Karabiner.
+6. **Theme includes** — one line into Ghostty's config and your multiplexer's.
+7. **Shell wiring** — Homebrew's env, the starship prompt, and `macstrap` on
+   your `PATH`.
+8. **A default theme** — `catppuccin-mocha`, so nothing is unstyled on first
+   launch.
+9. **yabai's scripting addition** — *prints instructions only*, never runs.
+10. **Services** — starts yabai, skhd, sketchybar.
+
+### 4. Do the two things a script can't
+
+**Enable the Hyper key** (required — every keybinding depends on it):
+
+> Karabiner-Elements → Complex Modifications → Add rule → enable
+> **"Macstrap Hyper Key"**
+
+Karabiner's config isn't safe to script-edit, so this one click is yours. It
+remaps Caps Lock to `cmd+alt+ctrl+shift`.
+
+**Open a new terminal window.** Shell changes only apply to new sessions.
+
+If you picked `none` for the shell, add this to your shell config yourself, or
+the `macstrap` command won't be found:
+
+```sh
+export PATH="$HOME/.macstrap/bin:$PATH"
+```
+
+### 5. Check it worked
+
+```sh
+macstrap doctor
+```
+
+Verifies services are running, the Hyper key rule is installed, your
+multiplexer and shell are wired, and a theme is applied. It exits with the
+number of problems it found, so it's safe to use in a script.
+
+### 6. Optional: yabai's scripting addition
+
+Window borders, opacity, and full window control need a partial SIP disable
+and a sudoers entry. Tiling and focus work fine without it. `install.sh` prints
+the exact steps after an explicit confirmation — it never runs them, because
+it's the one action here Macstrap can't cleanly reverse.
+
+---
+
+## Using it day to day
+
+### Commands
+
+```
+macstrap install [--dry-run]   run/re-run the installer
+                               --multiplexer=<tmux|herdr>
+                               --shell=<omz|fish|nushell|none>
+macstrap theme                 interactive theme picker (fzf + live preview)
+macstrap theme set <name>      apply a theme directly
+macstrap theme list            list available themes
+macstrap multiplexer           print the multiplexer in use
+macstrap multiplexer set <n>   switch to tmux or herdr, re-theming as it goes
+macstrap shell                 print the shell setup in use
+macstrap shell set <name>      switch shell setup (offers to chsh)
+macstrap doctor                health check
+macstrap update                git pull + re-run install
+macstrap remove                reverse everything Macstrap has done
+```
+
+Every command that changes state accepts `--dry-run`.
+
+### Keybindings
+
+Everything is on **Hyper** — Caps Lock, remapped to all four modifiers at
+once. Nothing is bound to plain Cmd, because every app on macOS already claims
+those.
+
+| Keys | Does |
+| --- | --- |
+| `Hyper` + `Return` | Ghostty |
+| `Hyper` + `B` / `E` / `F` | Firefox / VS Code / Finder |
+| `Hyper` + `Space` | Raycast |
+| `Hyper` + `T` | Theme picker |
+| `Hyper` + `H` `J` `K` `L` | Focus window left/down/up/right |
+| `Hyper` + `Shift` + `H` `J` `K` `L` | Swap window in that direction |
+| `Hyper` + `G` | Toggle float |
+| `Hyper` + `M` | Toggle fullscreen zoom |
+| `Hyper` + `1`–`4` | Switch to space 1–4 |
+
+Edit `configs/skhd/skhdrc` to change any of it — it's a symlink, so edits take
+effect on save with no reinstall.
+
+### Switching themes
+
+```sh
+macstrap theme              # fzf picker with live color swatches
+macstrap theme set nord     # or straight to it
+```
+
+Applies across Ghostty, your multiplexer, sketchybar, and Neovim at once.
+tmux/herdr and sketchybar reload instantly; Ghostty picks it up in new panes;
+Neovim needs a restart (or `:luafile ~/.config/nvim/lua/macstrap/init.lua`).
+
+---
 
 ## What gets installed
 
-The default set is intentionally small (`brew/Brewfile.core`) — everything
-heavier is a manual `brew install` away, never bundled by default:
+Intentionally small (`brew/Brewfile.core`) — anything heavier is a manual
+`brew install` away, never bundled:
 
-- **Window management**: yabai, skhd, Karabiner-Elements (Caps Lock → Hyper key)
-- **Bar / launcher**: sketchybar, Raycast
-- **Terminal stack**: Ghostty, Neovim, starship, fzf, jq, bat, btop
-- **Multiplexer**: tmux *or* herdr, whichever you pick (`brew/Brewfile.tmux`
-  / `brew/Brewfile.herdr`) — only the one you choose gets installed
-- **Shell**: Oh My Zsh, fish, or Nushell — again, only the one you pick, and
-  only if you pick one
-- **GUI apps**: Firefox, Visual Studio Code
-- **Wallpaper plumbing**: desktoppr
+- **Window management** — yabai, skhd, Karabiner-Elements
+- **Bar / launcher** — sketchybar, Raycast
+- **Terminal stack** — Ghostty, Neovim, starship, fzf, jq, bat, btop
+- **Multiplexer** — tmux *or* herdr, only the one you pick
+- **Shell** — Oh My Zsh, fish, or Nushell, only if you pick one
+- **GUI apps** — Firefox, Visual Studio Code
+- **Fonts** — Hack Nerd Font (sketchybar needs the glyphs)
+- **Wallpaper plumbing** — desktoppr
+
+---
+
+## Themes
+
+Seven ship today: `catppuccin-mocha`, `nord`, `gruvbox`, `tokyo-night`,
+`rose-pine`, `kanagawa`, `everforest` — the ones with mature ports across this
+whole toolchain. Omarchy's more original themes (lumon, hackerman,
+matte-black) are a deliberate fast-follow: those need palettes extracted from
+Omarchy's own theme files rather than vendored from an existing ecosystem.
+
+### Adding your own
+
+One file per theme is hand-written; everything else is generated.
+
+```sh
+mkdir themes/my-theme
+$EDITOR themes/my-theme/palette.json
+./scripts/gen-theme-configs.sh
+macstrap theme set my-theme
+```
+
+`palette.json` needs these keys:
+
+```json
+{
+  "name": "My Theme",
+  "variant": "dark",
+  "bg": "#1e1e2e", "bg_alt": "#181825",
+  "fg": "#cdd6f4", "fg_muted": "#a6adc8",
+  "black": "#45475a", "red": "#f38ba8", "green": "#a6e3a1",
+  "yellow": "#f9e2af", "blue": "#89b4fa", "magenta": "#cba6f7",
+  "cyan": "#94e2d5", "white": "#bac2de",
+  "accent": "#cba6f7",
+  "herdr_base": "catppuccin"
+}
+```
+
+`herdr_base` is optional and only matters if you use herdr (see below); it
+defaults to `terminal`. The generator writes `ghostty.conf`, `tmux.conf`,
+`herdr.toml`, `neovim.lua`, `sketchybar.sh`, and `preview.ansi` from it —
+**never hand-edit those**, they're overwritten on every run.
+
+Wallpapers are deliberately absent: Omarchy's are real photography with named
+Unsplash attributions, and redistributing them needs a per-image license check
+that hasn't been done.
+
+---
 
 ## Multiplexer: tmux or herdr
 
-- **tmux** — the classic. Themed the way everything else here is themed: one
-  `source-file` line appended to `~/.tmux.conf`, pointing at a symlink
-  Macstrap re-points on every theme switch.
+- **tmux** — the classic. Themed with one `source-file` line in `~/.tmux.conf`
+  pointing at a symlink Macstrap re-points on every theme switch.
 - **[herdr](https://herdr.dev)** — a newer multiplexer built around coding
   agents: tmux-style prefix keys plus mouse, panes that show whether each
   agent is working/blocked/done, sessions that survive detach and restart.
 
-Switch later without reinstalling — this re-applies the current theme to the
-new one and stops managing the old one:
-
 ```sh
 macstrap multiplexer            # print the current choice
-macstrap multiplexer set herdr
+macstrap multiplexer set herdr  # switch, re-theme, stop managing the old one
 ```
 
-The choice is recorded in `~/.macstrap/multiplexer`; installs that predate
-this option keep tmux.
+Recorded in `~/.macstrap/multiplexer`. Installs predating this option keep
+tmux.
 
-**One difference worth knowing about herdr:** its config is a single TOML
-file with no include directive, so Macstrap can't hand it a symlinked theme
-file the way it does for tmux and Ghostty. Instead the theme is written into
-`~/.config/herdr/config.toml` as a marked block (`# >>> macstrap theme` …
-`# <<< macstrap theme`), rewritten in place on every theme switch, removed if
-you switch away, and backed up + reversible like everything else. If that
-config already has its own `[theme]` table, Macstrap **won't touch it at
-all** — a duplicate TOML table makes herdr throw out the whole config, so
-you'll get a message asking you to remove yours first.
+**Two things to know about herdr.** Its config is a single TOML file with no
+include directive, so instead of a symlink the theme goes in as a marked block
+(`# >>> macstrap theme` … `# <<< macstrap theme`), rewritten on every theme
+switch and removed if you switch away. And if that config already has its own
+`[theme]` table, Macstrap **won't touch it at all** — a duplicate TOML table
+makes herdr discard the entire config, so you'll get a message asking you to
+remove yours first.
 
 herdr also exposes a fixed set of overridable color tokens rather than a full
-palette, so each theme names the closest herdr built-in as its base (in
-`palette.json`'s `herdr_base`) and overrides the tokens on top. Everforest
-has no herdr port, so it bases on herdr's `terminal` theme and inherits the
-Ghostty palette Macstrap already sets.
+palette, so each theme names the closest herdr built-in as its base
+(`herdr_base`) and overrides tokens on top. Everforest has no herdr port, so it
+bases on herdr's `terminal` theme and inherits the Ghostty palette Macstrap
+already sets.
+
+---
 
 ## Shell: Oh My Zsh, fish, Nushell — or none
 
 - **omz** — [Oh My Zsh](https://ohmyz.sh) on the zsh macOS already gave you.
   Not a Homebrew package, so it's installed by its own script, and Macstrap
-  asks before running it. It runs with `--unattended --keep-zshrc`, so the
-  installer won't change your login shell or replace an existing `~/.zshrc`.
+  asks first.
 - **fish** — [fish](https://fishshell.com), via `brew/Brewfile.fish`.
 - **nushell** — [Nushell](https://www.nushell.sh), via `brew/Brewfile.nushell`.
-- **none** — the default for non-interactive installs, and for anyone who
-  installed Macstrap before this option existed. Your shell is untouched.
-
-Whichever you pick gets the same two things wired up: Homebrew's environment,
-and the **starship** prompt that `Brewfile.core` has always installed but
-nothing used to actually enable.
+- **none** — your shell is untouched. The default for non-interactive installs
+  and for anyone who installed Macstrap before this option existed.
 
 ```sh
 macstrap shell             # print the current choice
-macstrap shell set fish
+macstrap shell set fish    # switch; unhooks the old one first
 ```
 
-The choice lives in `~/.macstrap/shell-choice`. Switching unhooks the old
-shell before wiring the new one, so nothing is left sourcing a fragment
-Macstrap has stopped maintaining.
+Whichever you pick gets the same three things: Homebrew's environment, the
+**starship** prompt, and `~/.macstrap/bin` on `PATH` so the `macstrap` command
+resolves. Recorded in `~/.macstrap/shell-choice`.
 
 ### How each one gets hooked up
 
-Macstrap generates one fragment per shell into `~/.macstrap/shell/` — these
-are generated rather than kept in `configs/` because they bake in this
-machine's Homebrew prefix and starship's own init output. Delivery then uses
-whatever mechanism the shell actually offers:
+Macstrap generates one fragment per shell into `~/.macstrap/shell/` —
+generated rather than kept in `configs/` because they bake in this machine's
+Homebrew prefix and starship's own init output. Delivery uses whatever
+mechanism the shell actually offers:
 
 | Shell | Hook |
 | --- | --- |
@@ -109,109 +340,123 @@ whatever mechanism the shell actually offers:
 | nushell | a marked block in `config.nu` |
 
 Nushell gets the block treatment for the same reason herdr does: its `source`
-needs a literal path it can resolve at parse time, and which autoload
-directories exist varies by version, so `config.nu` is the one place
-guaranteed to be read. Macstrap asks `nu` itself where that file lives rather
-than guessing — on macOS it's under `~/Library/Application Support`, not
-`~/.config`.
+needs a literal path resolvable at parse time, and which autoload directories
+exist varies by version, so `config.nu` is the one place guaranteed to be
+read. Macstrap asks `nu` itself where that file lives rather than guessing —
+on macOS it's under `~/Library/Application Support`, not `~/.config`.
 
 The zsh fragment sources Oh My Zsh only if your own `~/.zshrc` hasn't already
-done so, so a config that predates Macstrap keeps working and never loads
-Oh My Zsh twice. It also sets `ZSH_THEME=""`, since starship draws the prompt.
+done so, so a pre-existing config keeps working and never loads it twice. It
+sets `ZSH_THEME=""`, since starship draws the prompt.
 
 ### Changing your login shell
 
-Separate, explicit, and always confirmed — installing a shell and living in
-it are two different decisions. `chsh` only accepts shells listed in
+Separate, explicit, and always confirmed — installing a shell and living in it
+are two different decisions. `chsh` only accepts shells listed in
 `/etc/shells`, and adding a line there needs sudo: the one privileged step in
-this whole feature. Macstrap asks before doing either, prints the two commands
-to run yourself if you decline, and records your previous shell so
-`macstrap remove` puts it back.
+this feature. Macstrap asks before doing either, prints the two commands to
+run yourself if you decline, and records your previous shell so `macstrap
+remove` puts it back.
 
-## Themes
+---
 
-`macstrap theme` opens an fzf picker with a live color-swatch preview; enter
-applies it across Ghostty, your multiplexer (tmux or herdr), sketchybar, and
-Neovim. Non-interactive: `macstrap theme set nord`.
+## Updating
 
-Shipped in this pass: `catppuccin-mocha`, `nord`, `gruvbox`, `tokyo-night`,
-`rose-pine`, `kanagawa`, `everforest` — the themes with mature, existing
-ports across this whole toolchain. Omarchy's more original themes (lumon,
-hackerman, matte-black, etc.) are a deliberate fast-follow, since those
-need their palettes extracted from Omarchy's own theme files rather than
-vendored from an existing ecosystem.
+```sh
+macstrap update    # git pull --ff-only, then re-run install.sh
+```
 
-Each theme folder's only hand-edited file is `palette.json` — every
-per-app config (`ghostty.conf`, `tmux.conf`, `herdr.toml`, `neovim.lua`,
-`sketchybar.sh`, `preview.ansi`) is generated from it by
-`scripts/gen-theme-configs.sh`. Edit the palette, re-run the generator, never
-hand-edit the generated files.
+Idempotent: already-correct state is a no-op, and your theme, multiplexer, and
+shell choices are preserved. If you've committed local changes, `--ff-only`
+will refuse rather than create a merge you didn't ask for — pull it yourself
+in that case.
 
-Wallpapers are intentionally not included yet — Omarchy's per-theme
-wallpapers are real photography (several explicitly attributed to named
-Unsplash photographers), and bundling them needs a license check per image
-before redistribution, which hasn't been done.
+## Uninstalling
+
+```sh
+macstrap remove
+```
+
+Walks the manifest backwards, restoring every backup and undoing every symlink
+and appended line — including your login shell if you let Macstrap change it.
+It asks for confirmation first.
+
+Four things it deliberately leaves to you, and prints as reminders:
+
+- `brew bundle cleanup --file=brew/Brewfile.core --force` to remove packages
+- Disabling the Hyper key rule in Karabiner's UI
+- `uninstall_oh_my_zsh`, if you installed Oh My Zsh
+- Removing a shell you added to `/etc/shells` (needs sudo), and re-enabling SIP
+  if you disabled it for yabai — that one needs Recovery Mode
+
+## Troubleshooting
+
+| Symptom | Likely cause |
+| --- | --- |
+| `macstrap: command not found` | New terminal not opened yet, or you picked `shell=none` — add `~/.macstrap/bin` to `PATH`. |
+| No keybindings work | The Hyper key rule isn't enabled in Karabiner. `macstrap doctor` checks the file exists but can't see whether it's toggled on. |
+| Windows don't tile | yabai/skhd lack Accessibility permission (System Settings → Privacy & Security), or aren't running — `macstrap doctor` will say. |
+| No window borders/opacity | Expected without the scripting addition. `yabai --check-sa` confirms. |
+| Theme applied but Ghostty unchanged | Existing panes don't restyle; open a new one, or `Cmd+Shift+,` to reload. |
+| Theme applied but Neovim unchanged | Restart it, or `:luafile ~/.config/nvim/lua/macstrap/init.lua`. |
+| herdr colors didn't change | Your `config.toml` probably has its own `[theme]` table — Macstrap skips it on purpose and says so. |
+| Everything broke after moving the repo | The clone has to stay where it was. Move it back, or re-run `./install.sh` from the new location. |
+
+Start with `macstrap doctor` — it catches most of the above.
+
+---
 
 ## Safety model
 
-Every state-changing action goes through `bin/lib/manifest.sh`, which logs
-each one to `~/.macstrap/state.jsonl`. This is what makes the following true:
+Every state-changing action goes through `bin/lib/manifest.sh`, which logs it
+to `~/.macstrap/state.jsonl`. That's what makes these true:
 
-- **Idempotent** — re-running `install.sh` or `theme-set` is always safe;
-  already-correct state is a no-op.
-- **Non-destructive** — if a target already has a real file (not our
-  symlink), it's backed up to `~/.macstrap/backups/` before anything is
-  touched, never overwritten in place.
-- **Dry-run** — `install.sh --dry-run` / `theme-set <name> --dry-run` print
-  every action without doing it.
-- **Reversible** — `macstrap remove` walks the manifest backwards and
-  restores exactly what was backed up, including your login shell if you let
-  Macstrap change it.
+- **Idempotent** — re-running anything is safe; already-correct state is a
+  no-op.
+- **Non-destructive** — if a target already holds a real file (not our
+  symlink), it's backed up to `~/.macstrap/backups/` first, never overwritten
+  in place.
+- **Dry-run** — `--dry-run` prints every action without doing it, and without
+  creating so much as an empty file.
+- **Reversible** — `macstrap remove` walks the manifest backwards and restores
+  exactly what was backed up.
 
-One deliberate exception: yabai's scripting addition (full window
-border/opacity control) needs a partial SIP disable and a sudoers entry.
-That step is never run automatically — `install.sh` only prints the
-instructions after an explicit confirmation, because it's the one action
-here that isn't cleanly reversible by this tool.
+One deliberate exception: yabai's scripting addition needs a partial SIP
+disable and a sudoers entry. It's never run automatically — `install.sh` only
+prints the instructions, because it's the one action here this tool can't
+cleanly reverse.
 
-## Keybindings
-
-All bindings live on **Hyper** (Caps Lock, remapped via
-`configs/karabiner/macstrap-hyper-key.json` — enable it once in
-Karabiner-Elements' Complex Modifications UI after install) plus every
-other modifier held together. Nothing is bound to plain Cmd, since that's
-already claimed by every app on the system — see `configs/skhd/skhdrc` for
-the full list (app launching, yabai focus/swap/float, space switching).
-
-## Commands
+## How it's laid out
 
 ```
-macstrap install [--dry-run]   run/re-run the installer
-                               (--multiplexer=<tmux|herdr>, --shell=<omz|fish|
-                                nushell|none> to skip the prompts)
-macstrap theme                 interactive theme picker
-macstrap theme set <name>      apply a theme directly
-macstrap theme list            list available themes
-macstrap multiplexer           print the multiplexer in use
-macstrap multiplexer set <n>   switch to tmux or herdr, re-theming as it goes
-macstrap shell                 print the shell setup in use
-macstrap shell set <name>      switch shell setup (offers to chsh)
-macstrap doctor                health check (services running, SA loaded, etc.)
-macstrap update                git pull + re-run install
-macstrap remove                reverse everything Macstrap has done
+install.sh              the installer; every step is numbered and commented
+bin/macstrap            CLI entrypoint, dispatches to the rest
+bin/theme-set           applies a theme
+bin/macstrap-doctor     health check
+bin/macstrap-remove     manifest-driven uninstall
+bin/lib/manifest.sh     the safety layer — all state changes go through here
+bin/lib/multiplexer.sh  tmux/herdr choice + herdr's theme block
+bin/lib/shell.sh        shell choice, fragment generation, login shell
+brew/Brewfile.*         core, plus one per multiplexer and shell option
+configs/                static app configs, symlinked into place
+themes/<name>/          palette.json (hand-edited) + generated per-app configs
+scripts/gen-theme-configs.sh   regenerates all theme output from palettes
 ```
 
 ## Known gaps / not yet built
 
 - **The prompt isn't themed per theme.** Every shell gets starship, but
-  starship reads a single `~/.config/starship.toml` with no include
-  directive, so making its colors follow `macstrap theme` needs the same
-  managed-block treatment herdr and Nushell got. Not done yet — the prompt
-  uses starship's own defaults.
+  starship reads a single `~/.config/starship.toml` with no include directive,
+  so making its colors follow `macstrap theme` needs the same managed-block
+  treatment herdr and Nushell got. The prompt uses starship's defaults for now.
 - Wallpaper-per-theme (blocked on the licensing check above)
 - Omarchy-original themes beyond the 7 with existing ecosystem ports
 - Raycast extension for the theme picker (the fzf TUI is the v1 path)
-- CI (GitHub Actions macOS runner running `install.sh` end-to-end + shellcheck)
-- Ghostty's exact `-e` launch flag and `config-file` include directive are
-  written against current docs but not yet confirmed against your installed
-  Ghostty version — check these first if either integration misbehaves.
+- CI (a GitHub Actions macOS runner doing `install.sh` end-to-end + shellcheck)
+- Ghostty's `-e` launch flag and `config-file` include directive are written
+  against current docs but not confirmed against every Ghostty release — check
+  these first if the theme picker keybinding or Ghostty theming misbehaves.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
