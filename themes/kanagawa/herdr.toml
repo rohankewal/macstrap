@@ -1,0 +1,17 @@
+# Generated from palette.json for theme: Kanagawa — do not hand-edit.
+[theme]
+name = "kanagawa"
+
+[theme.custom]
+panel_bg = "#1f1f28"
+surface_dim = "#1f1f28"
+surface0 = "#2a2a37"
+text = "#dcd7ba"
+accent = "#957fb8"
+red = "#c34043"
+green = "#76946a"
+yellow = "#c0a36e"
+blue = "#7e9cd8"
+mauve = "#957fb8"
+teal = "#6a9589"
+peach = "#957fb8"

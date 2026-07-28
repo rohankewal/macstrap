@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Applies a Macstrap theme: re-points the per-app symlinks at the chosen
+# theme's generated configs and reloads whatever can be reloaded live.
+# Usage: theme-set <theme-name> [--dry-run]
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+THEMES_DIR="$ROOT/themes"
+
+# shellcheck source=lib/log.sh
+source "$ROOT/bin/lib/log.sh"
+# shellcheck source=lib/manifest.sh
+source "$ROOT/bin/lib/manifest.sh"
+# shellcheck source=lib/multiplexer.sh
+source "$ROOT/bin/lib/multiplexer.sh"
+
+theme=""
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) export DRY_RUN=1 ;;
+    -*) log_error "unknown flag: $arg"; exit 1 ;;
+    *) theme="$arg" ;;
+  esac
+done
+
+if [[ -z "$theme" ]]; then
+  log_error "usage: theme-set <theme-name> [--dry-run]"
+  echo "available themes:"
+  ls "$THEMES_DIR"
+  exit 1
+fi
+
+if [[ ! -d "$THEMES_DIR/$theme" ]]; then
+  log_error "unknown theme: $theme"
+  echo "available themes:"
+  ls "$THEMES_DIR"
+  exit 1
+fi
+
+mux="$(multiplexer_get)"
+
+manifest_init
+log_step "Applying theme: $theme (multiplexer: $mux)"
+
+manifest_link "$HOME/.config/ghostty/macstrap-theme.conf" "$THEMES_DIR/$theme/ghostty.conf"
+manifest_link "$HOME/.config/nvim/lua/macstrap/theme.lua" "$THEMES_DIR/$theme/neovim.lua"
+manifest_link "$HOME/.config/sketchybar/macstrap-theme.sh" "$THEMES_DIR/$theme/sketchybar.sh"
+
+# tmux takes a symlinked include; herdr's TOML has no include directive, so it
+# gets a marked block written into its own config instead.
+case "$mux" in
+  tmux)  manifest_link "$HOME/.config/tmux/macstrap-theme.conf" "$THEMES_DIR/$theme/tmux.conf" ;;
+  herdr) herdr_apply_theme "$THEMES_DIR/$theme/herdr.toml" ;;
+esac
+
+if [[ "${DRY_RUN:-0}" != "1" ]]; then
+  mkdir -p "$MACSTRAP_HOME"
+  echo "$theme" > "$MACSTRAP_HOME/current-theme"
+
+  case "$mux" in
+    # tmux reloads instantly if a server is running
+    tmux)  tmux source-file "$HOME/.tmux.conf" >/dev/null 2>&1 || true ;;
+    # herdr reloads instantly if a server is running
+    herdr) herdr server reload-config >/dev/null 2>&1 || true ;;
+  esac
+
+  # sketchybar reloads instantly
+  sketchybar --reload >/dev/null 2>&1 || true
+
+  log_success "Theme applied: $theme"
+  log_dim "  Ghostty watches its config file and reloads new panes automatically;"
+  log_dim "  existing panes may need Cmd+Shift+, to force a redraw."
+  log_dim "  Neovim: restart, or run :luafile ~/.config/nvim/lua/macstrap/init.lua"
+else
+  log_success "Dry run complete — no changes made."
+fi

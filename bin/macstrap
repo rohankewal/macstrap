@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Main Macstrap CLI entrypoint.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/log.sh
+source "$ROOT/bin/lib/log.sh"
+
+usage() {
+  cat <<EOF
+macstrap <command> [args]
+
+Commands:
+  install [--dry-run]     Run the full installer
+                          (--multiplexer=<tmux|herdr> to pick non-interactively)
+  theme                   Open the interactive theme picker (fzf TUI)
+  theme set <name>        Apply a theme non-interactively
+  theme list              List available theme names
+  multiplexer             Print the multiplexer in use (tmux or herdr)
+  multiplexer set <name>  Switch multiplexer and re-apply the current theme
+  shell                   Print the shell setup in use (omz, fish, nushell, none)
+  shell set <name>        Switch shell setup (offers to change your login shell)
+  update                  Pull latest + re-run install (idempotent)
+  remove                  Reverse everything Macstrap has done
+  doctor                  Check the health of the installed stack
+EOF
+}
+
+cmd="${1:-}"; shift || true
+
+case "$cmd" in
+  install)
+    exec "$ROOT/install.sh" "$@"
+    ;;
+  theme)
+    sub="${1:-}"
+    case "$sub" in
+      set)   shift; exec "$ROOT/bin/theme-set" "$@" ;;
+      list)  ls "$ROOT/themes" ;;
+      "")    exec "$ROOT/bin/macstrap-theme" ;;
+      *)     log_error "unknown theme subcommand: $sub"; exit 1 ;;
+    esac
+    ;;
+  multiplexer)
+    exec "$ROOT/bin/macstrap-multiplexer" "$@"
+    ;;
+  shell)
+    exec "$ROOT/bin/macstrap-shell" "$@"
+    ;;
+  update)
+    if [[ -d "$ROOT/.git" ]]; then
+      log_step "Pulling latest Macstrap..."
+      git -C "$ROOT" pull --ff-only
+    else
+      log_warn "not a git checkout, skipping pull"
+    fi
+    exec "$ROOT/install.sh"
+    ;;
+  remove)
+    exec "$ROOT/bin/macstrap-remove"
+    ;;
+  doctor)
+    exec "$ROOT/bin/macstrap-doctor"
+    ;;
+  ""|-h|--help|help)
+    usage
+    ;;
+  *)
+    log_error "unknown command: $cmd"
+    usage
+    exit 1
+    ;;
+esac

@@ -1,0 +1,323 @@
+#!/usr/bin/env bash
+# Which shell Macstrap sets up: Oh My Zsh, fish, Nushell — or none, which
+# leaves your shell entirely alone. Picked once at install time, recorded in
+# ~/.macstrap/shell, read back by macstrap-shell and doctor.
+#
+# Each shell gets the same two things (Homebrew's environment and the starship
+# prompt that Brewfile.core installs but nothing used to wire up), written to a
+# generated fragment under ~/.macstrap/shell/ and delivered by whatever
+# mechanism that shell actually has:
+#
+#   omz      one source line appended to ~/.zshrc
+#   fish     a symlink into fish's conf.d/ drop-in directory
+#   nushell  a marked block in config.nu (Nushell's source needs a literal
+#            path, and its autoload dirs vary by version, so config.nu is the
+#            one place guaranteed to be read)
+#
+# The fragments are generated rather than shipped in configs/ because they bake
+# in this machine's Homebrew prefix and starship's own init output.
+#
+# Requires: log.sh, manifest.sh.
+
+MACSTRAP_HOME="${MACSTRAP_HOME:-$HOME/.macstrap}"
+MACSTRAP_SHELL_FILE="$MACSTRAP_HOME/shell-choice"
+MACSTRAP_SHELL_DIR="$MACSTRAP_HOME/shell"
+MACSTRAP_SHELLS=(omz fish nushell none)
+
+shell_valid() {
+  local candidate="$1" s
+  for s in "${MACSTRAP_SHELLS[@]}"; do
+    [[ "$s" == "$candidate" ]] && return 0
+  done
+  return 1
+}
+
+# shell_get -> the recorded choice, defaulting to none. Installs that predate
+# this option never had their shell touched, and staying out of someone's
+# shell is the one safe default here.
+shell_get() {
+  local recorded="${MACSTRAP_SHELL:-}"
+  [[ -z "$recorded" && -f "$MACSTRAP_SHELL_FILE" ]] && recorded="$(<"$MACSTRAP_SHELL_FILE")"
+  if shell_valid "$recorded"; then
+    printf '%s' "$recorded"
+  else
+    printf '%s' "none"
+  fi
+}
+
+shell_set() {
+  local choice="$1"
+  if ! shell_valid "$choice"; then
+    log_error "unknown shell: $choice (choose one of: ${MACSTRAP_SHELLS[*]})"
+    return 1
+  fi
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    log_dim "  [dry-run] would record shell: $choice"
+    return 0
+  fi
+  mkdir -p "$MACSTRAP_HOME"
+  printf '%s\n' "$choice" > "$MACSTRAP_SHELL_FILE"
+}
+
+# shell_resolve [explicit-choice] -> one of MACSTRAP_SHELLS, on stdout.
+# Same precedence as the multiplexer: flag, then what's recorded, then a
+# prompt. Non-interactive runs get "none" rather than a shell they didn't ask
+# for — installing Oh My Zsh means running someone else's script off the
+# internet, which is not something to do to an unattended machine by default.
+shell_resolve() {
+  local explicit="${1:-}"
+
+  if [[ -n "$explicit" ]]; then
+    shell_valid "$explicit" || {
+      log_error "unknown shell: $explicit (choose one of: ${MACSTRAP_SHELLS[*]})"
+      return 1
+    }
+    printf '%s' "$explicit"
+    return 0
+  fi
+
+  if [[ -f "$MACSTRAP_SHELL_FILE" ]] && shell_valid "$(<"$MACSTRAP_SHELL_FILE")"; then
+    printf '%s' "$(<"$MACSTRAP_SHELL_FILE")"
+    return 0
+  fi
+
+  if [[ ! -t 0 ]]; then
+    printf '%s' "none"
+    return 0
+  fi
+
+  {
+    log_step "Pick a shell"
+    log_dim "  omz      Oh My Zsh on top of the zsh you already have. Installed by"
+    log_dim "           its official script (you'll be asked before it runs)."
+    log_dim "  fish     friendly interactive shell, great defaults out of the box."
+    log_dim "  nushell  structured data in the pipeline instead of raw text."
+    log_dim "  none     leave my shell alone."
+    log_dim "  All three get Homebrew's env + the starship prompt wired up."
+    log_dim "  Switch later with: macstrap shell set <name>"
+  } >&2
+  prompt_choice "Which one?" "omz" "${MACSTRAP_SHELLS[@]}"
+}
+
+# shell_login_path <choice> -> the binary chsh would point at, or empty.
+shell_login_path() {
+  local choice="$1" prefix
+  prefix="$(brew --prefix 2>/dev/null || echo /opt/homebrew)"
+  case "$choice" in
+    omz)     printf '%s' "/bin/zsh" ;;          # macOS's own zsh, already in /etc/shells
+    fish)    printf '%s' "$prefix/bin/fish" ;;
+    nushell) printf '%s' "$prefix/bin/nu" ;;
+    *)       printf '%s' "" ;;
+  esac
+}
+
+# --- fragment generation ----------------------------------------------------
+
+_shell_write() {
+  # _shell_write <path> <content>: generated files, not user config, so these
+  # are written directly rather than through the manifest. `macstrap remove`
+  # reverses the *links and lines that point at them*, which is what actually
+  # affects the user's shell.
+  local path="$1" content="$2"
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    log_dim "  [dry-run] would generate $path"
+    return 0
+  fi
+  mkdir -p "$(dirname "$path")"
+  printf '%s\n' "$content" > "$path"
+}
+
+shell_write_fragment() {
+  local choice="$1"
+  local brew_bin prefix
+  brew_bin="$(command -v brew || echo /opt/homebrew/bin/brew)"
+  prefix="$(brew --prefix 2>/dev/null || echo /opt/homebrew)"
+
+  case "$choice" in
+    omz)
+      _shell_write "$MACSTRAP_SHELL_DIR/macstrap.zsh" "# Generated by macstrap install — do not hand-edit.
+# Re-run 'macstrap install' to regenerate.
+
+eval \"\$($brew_bin shellenv)\"
+
+# Oh My Zsh. Skipped when your own .zshrc already sourced it (oh-my-zsh.sh
+# sets ZSH_CACHE_DIR), so a config that predates Macstrap keeps working and
+# never gets loaded twice.
+export ZSH=\"\${ZSH:-\$HOME/.oh-my-zsh}\"
+if [[ -d \"\$ZSH\" && -z \"\${ZSH_CACHE_DIR:-}\" ]]; then
+  ZSH_THEME=\"\"   # starship draws the prompt, so no Oh My Zsh theme
+  source \"\$ZSH/oh-my-zsh.sh\"
+fi
+
+command -v starship >/dev/null && eval \"\$(starship init zsh)\""
+      ;;
+    fish)
+      _shell_write "$MACSTRAP_SHELL_DIR/macstrap.fish" "# Generated by macstrap install — do not hand-edit.
+# Re-run 'macstrap install' to regenerate.
+
+$brew_bin shellenv fish | source
+
+if command -q starship
+    starship init fish | source
+end"
+      ;;
+    nushell)
+      # Nushell's `source` needs a path it can resolve at parse time, and a
+      # missing file is a parse error that breaks the whole shell — so the
+      # starship line only gets written when starship's init actually ran.
+      local starship_line=""
+      if command -v starship >/dev/null 2>&1; then
+        if [[ "${DRY_RUN:-0}" == "1" ]]; then
+          log_dim "  [dry-run] would generate $MACSTRAP_SHELL_DIR/starship.nu"
+        else
+          mkdir -p "$MACSTRAP_SHELL_DIR"
+          starship init nu > "$MACSTRAP_SHELL_DIR/starship.nu"
+        fi
+        starship_line="source \"$MACSTRAP_SHELL_DIR/starship.nu\""
+      fi
+      _shell_write "$MACSTRAP_SHELL_DIR/macstrap.nu" "# Generated by macstrap install — do not hand-edit.
+# Re-run 'macstrap install' to regenerate.
+
+# brew shellenv has no Nushell output, so Homebrew's bin dirs go on PATH here.
+\$env.PATH = (\$env.PATH | prepend [\"$prefix/bin\" \"$prefix/sbin\"] | uniq)
+
+$starship_line"
+      ;;
+  esac
+}
+
+# --- wiring -----------------------------------------------------------------
+
+# Where Nushell keeps config.nu. Asking nu itself is the only reliable answer
+# (macOS puts it under Application Support, XDG_CONFIG_HOME moves it); the
+# fallback is only for describing a machine where nu isn't installed yet.
+nushell_config_path() {
+  if command -v nu >/dev/null 2>&1; then
+    nu -c '$nu.config-path' 2>/dev/null && return 0
+  fi
+  printf '%s' "${XDG_CONFIG_HOME:-$HOME/Library/Application Support}/nushell/config.nu"
+}
+
+shell_wire() {
+  local choice="$1"
+  local fish_config="${XDG_CONFIG_HOME:-$HOME/.config}/fish"
+
+  case "$choice" in
+    omz)
+      manifest_ensure_line "$HOME/.zshrc" "source \"$MACSTRAP_SHELL_DIR/macstrap.zsh\""
+      ;;
+    fish)
+      manifest_link "$fish_config/conf.d/macstrap.fish" "$MACSTRAP_SHELL_DIR/macstrap.fish"
+      ;;
+    nushell)
+      manifest_ensure_block "$(nushell_config_path)" "shell" \
+        "source \"$MACSTRAP_SHELL_DIR/macstrap.nu\""
+      ;;
+    none) : ;;
+  esac
+}
+
+shell_unwire() {
+  # Stop driving a shell we're switching away from. The generated fragments
+  # under ~/.macstrap/shell/ stay put — they're inert once nothing sources
+  # them, and keeping them means switching back is instant.
+  local choice="$1"
+  local fish_config="${XDG_CONFIG_HOME:-$HOME/.config}/fish"
+
+  case "$choice" in
+    omz)
+      manifest_remove_line "$HOME/.zshrc" "source \"$MACSTRAP_SHELL_DIR/macstrap.zsh\""
+      ;;
+    fish)
+      manifest_unlink "$fish_config/conf.d/macstrap.fish"
+      ;;
+    nushell)
+      manifest_remove_block "$(nushell_config_path)" "shell"
+      ;;
+    none) : ;;
+  esac
+}
+
+# --- Oh My Zsh install ------------------------------------------------------
+
+# Runs the official installer the way it's meant to be run non-destructively:
+#   --unattended  don't chsh and don't exec zsh out from under us
+#   --keep-zshrc  never replace an existing ~/.zshrc
+# (Macstrap does its own chsh, with the old shell recorded so it can be undone.)
+omz_install() {
+  if [[ -d "${ZSH:-$HOME/.oh-my-zsh}" ]]; then
+    log_dim "  Oh My Zsh is already installed"
+    return 0
+  fi
+
+  log_step "Oh My Zsh installs by running its official script from GitHub."
+  log_dim "  https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
+  log_dim "  Macstrap passes --unattended --keep-zshrc, so it won't change your"
+  log_dim "  login shell or touch an existing ~/.zshrc."
+
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    log_dim "  [dry-run] would offer to run the Oh My Zsh installer"
+    return 0
+  fi
+
+  if ! confirm "Run the Oh My Zsh installer now?"; then
+    log_warn "  skipped — Macstrap's zsh setup will still wire starship, and the"
+    log_dim  "  Oh My Zsh lines start working the moment you install it yourself."
+    return 0
+  fi
+
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+    "" --unattended --keep-zshrc
+}
+
+# --- login shell ------------------------------------------------------------
+
+# chsh needs the target listed in /etc/shells, and editing that needs sudo —
+# the only part of this feature that does. Both steps are gated behind an
+# explicit confirmation, and the previous shell goes in the manifest so
+# `macstrap remove` can put it back without sudo.
+shell_set_login() {
+  local target="$1"
+  [[ -n "$target" ]] || return 0
+
+  if [[ ! -x "$target" ]]; then
+    log_warn "  $target isn't there yet — skipping the login shell change."
+    return 0
+  fi
+
+  local current
+  # `|| true` because callers run with set -e -o pipefail and a user record
+  # dscl can't read is a "don't know", not a reason to abort the install.
+  current="$(dscl . -read "$HOME" UserShell 2>/dev/null | awk '{print $2}' || true)"
+  if [[ "$current" == "$target" ]]; then
+    log_dim "  already your login shell: $target"
+    return 0
+  fi
+
+  echo ""
+  log_step "Optional: make $target your login shell (currently ${current:-unknown})"
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    log_dim "  [dry-run] would offer to chsh to $target"
+    return 0
+  fi
+
+  if ! grep -qxF "$target" /etc/shells 2>/dev/null; then
+    log_dim "  $target isn't in /etc/shells yet, and chsh won't accept a shell"
+    log_dim "  that isn't listed there. Adding the line needs sudo."
+    if ! confirm "Add $target to /etc/shells (sudo) and change your login shell?"; then
+      log_dim "  Skipped. To do it yourself later:"
+      log_dim "    echo '$target' | sudo tee -a /etc/shells"
+      log_dim "    chsh -s '$target'"
+      return 0
+    fi
+    echo "$target" | sudo tee -a /etc/shells >/dev/null || {
+      log_error "  couldn't write to /etc/shells — leaving your login shell alone"
+      return 0
+    }
+  elif ! confirm "Change your login shell to $target?"; then
+    log_dim "  Skipped. Later: chsh -s '$target'"
+    return 0
+  fi
+
+  manifest_chsh "$target" "$current"
+}

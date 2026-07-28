@@ -1,0 +1,34 @@
+# Macstrap core — the minimal, always-installed stack.
+# Everything heavier (Docker, Node, Postgres, other browsers/editors...) is
+# opt-in via `macstrap install --preset` or a plain `brew install`, never
+# bundled here. Keep this file short on purpose.
+
+# --- window management / launcher / bar ---
+brew "yabai"
+brew "skhd"
+brew "sketchybar"
+cask "raycast"
+
+# --- terminal stack ---
+# The multiplexer is not here: it's a choice, installed from
+# Brewfile.tmux or Brewfile.herdr depending on what you picked.
+cask "ghostty"
+brew "neovim"
+brew "starship"
+
+# --- shell tooling used by scripts/theme picker ---
+brew "fzf"
+brew "jq"
+brew "bat"
+brew "btop"
+
+# --- keybinding + wallpaper plumbing ---
+cask "karabiner-elements"
+brew "desktoppr"
+
+# --- menu bar needs glyphs for battery/wifi/etc icons ---
+cask "font-hack-nerd-font"
+
+# --- the 4 GUI apps in the default set ---
+cask "firefox"
+cask "visual-studio-code"

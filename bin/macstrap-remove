@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Reverses everything recorded in the manifest, in reverse order, restoring
+# whatever backups exist. Best-effort by design: anything it can't safely
+# automate (re-enabling SIP) it prints instructions for instead of guessing.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/log.sh
+source "$ROOT/bin/lib/log.sh"
+# shellcheck source=lib/manifest.sh
+source "$ROOT/bin/lib/manifest.sh"
+
+manifest_init
+
+if [[ ! -s "$MACSTRAP_MANIFEST" ]]; then
+  log_warn "manifest is empty — nothing for macstrap to reverse."
+  exit 0
+fi
+
+log_step "This will undo every change Macstrap made and restore your original files."
+confirm "Continue?" || { echo "cancelled."; exit 0; }
+
+while IFS= read -r line; do
+  action="$(jq -r '.action' <<<"$line")"
+
+  case "$action" in
+    link)
+      target="$(jq -r '.target' <<<"$line")"
+      source_path="$(jq -r '.source' <<<"$line")"
+      backup="$(jq -r '.backup' <<<"$line")"
+
+      if [[ -L "$target" && "$(readlink "$target")" == "$source_path" ]]; then
+        rm -f "$target"
+        if [[ -n "$backup" && -e "$backup" ]]; then
+          mv "$backup" "$target"
+          log_success "restored $target from backup"
+        else
+          log_success "removed $target"
+        fi
+      else
+        log_dim "skipping $target — no longer points at what we linked, leaving it alone"
+      fi
+      ;;
+    unlink)
+      # Reversing a removal means putting the link back, so that the original
+      # link entry further down the manifest can restore what it backed up.
+      target="$(jq -r '.target' <<<"$line")"
+      source_path="$(jq -r '.source' <<<"$line")"
+      if [[ ! -e "$target" && ! -L "$target" ]]; then
+        mkdir -p "$(dirname "$target")"
+        ln -s "$source_path" "$target"
+        log_success "re-created $target (so its backup can be restored below)"
+      fi
+      ;;
+    shell)
+      previous="$(jq -r '.previous' <<<"$line")"
+      target="$(jq -r '.target' <<<"$line")"
+      if [[ -n "$previous" && "$previous" != "null" ]]; then
+        if chsh -s "$previous" 2>/dev/null; then
+          log_success "login shell restored to $previous"
+        else
+          log_warn "couldn't restore login shell to $previous — run: chsh -s '$previous'"
+        fi
+      else
+        log_warn "no previous login shell recorded; yours is still $target"
+      fi
+      ;;
+    append_line|remove_line|block)
+      # Both actions back up the whole file before touching it, so restoring
+      # the backup is the reversal. Walking the manifest backwards means a
+      # file rewritten several times (a block re-written on every theme
+      # switch) ends up at its oldest, pre-Macstrap backup.
+      file="$(jq -r '.file' <<<"$line")"
+      backup="$(jq -r '.backup' <<<"$line")"
+      if [[ -n "$backup" && -e "$backup" ]]; then
+        cp "$backup" "$file"
+        log_success "restored $file to its pre-Macstrap contents"
+      fi
+      ;;
+    defaults)
+      domain="$(jq -r '.domain' <<<"$line")"
+      key="$(jq -r '.key' <<<"$line")"
+      type="$(jq -r '.type' <<<"$line")"
+      previous="$(jq -r '.previous' <<<"$line")"
+      if [[ "$previous" == "__unset__" ]]; then
+        defaults delete "$domain" "$key" 2>/dev/null || true
+        log_success "removed $domain $key (was unset before Macstrap)"
+      else
+        defaults write "$domain" "$key" "$type" "$previous" 2>/dev/null || \
+          log_warn "couldn't restore $domain $key to its previous value ($previous) — check manually"
+        log_success "restored $domain $key"
+      fi
+      ;;
+    *)
+      log_warn "unknown manifest action, skipping: $action"
+      ;;
+  esac
+done < <(manifest_each_reversed)
+
+: > "$MACSTRAP_MANIFEST"
+log_success "Macstrap changes reversed."
+
+echo ""
+log_step "Not automated (do these yourself if you want them fully undone):"
+echo "  - brew bundle cleanup --file='$ROOT/brew/Brewfile.core' --force   (removes installed packages)"
+echo "    ...and the multiplexer you picked: brew uninstall $(
+  MACSTRAP_HOME="${MACSTRAP_HOME:-$HOME/.macstrap}"
+  f="$MACSTRAP_HOME/multiplexer"; [[ -f "$f" ]] && cat "$f" || echo tmux)"
+echo "  - Karabiner: disable the Macstrap Hyper Key rule in its Complex Modifications UI"
+echo "  - Oh My Zsh, if you installed it: it ships its own uninstaller, run 'uninstall_oh_my_zsh'"
+echo "  - /etc/shells: if Macstrap added a shell there, remove that line by hand (needs sudo)"
+echo "  - yabai: if you disabled SIP for the scripting addition, re-enabling it requires"
+echo "    booting into Recovery Mode and running 'csrutil enable' — this was never automated."

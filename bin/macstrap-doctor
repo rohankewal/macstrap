@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# Best-effort health check. Exits non-zero if anything looks broken.
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/log.sh
+source "$ROOT/bin/lib/log.sh"
+# shellcheck source=lib/multiplexer.sh
+source "$ROOT/bin/lib/multiplexer.sh"
+# shellcheck source=lib/shell.sh
+source "$ROOT/bin/lib/shell.sh"
+
+problems=0
+
+check_running() {
+  local name="$1" proc="$2"
+  if pgrep -x "$proc" >/dev/null 2>&1; then
+    log_success "$name is running"
+  else
+    log_warn "$name is not running"
+    problems=$((problems + 1))
+  fi
+}
+
+check_running "yabai" "yabai"
+check_running "skhd" "skhd"
+check_running "sketchybar" "sketchybar"
+check_running "Karabiner-Elements" "karabiner_console_user_server"
+
+if command -v yabai >/dev/null 2>&1; then
+  if yabai --check-sa >/dev/null 2>&1; then
+    log_success "yabai scripting addition is loaded"
+  else
+    log_warn "yabai scripting addition is NOT loaded — window borders/opacity will be limited."
+    log_dim "  This needs the partial-SIP-disable step from install.sh. Tiling/focus still work without it."
+    problems=$((problems + 1))
+  fi
+fi
+
+if [[ -f "$HOME/.config/karabiner/assets/complex_modifications/macstrap-hyper-key.json" ]]; then
+  log_success "Hyper key rule file is installed"
+  log_dim "  (Karabiner doesn't expose enabled-rule state on disk in a stable way —"
+  log_dim "   confirm it's checked under Karabiner-Elements > Complex Modifications.)"
+else
+  log_warn "Hyper key rule file not found — re-run macstrap install"
+  problems=$((problems + 1))
+fi
+
+mux="$(multiplexer_get)"
+if command -v "$mux" >/dev/null 2>&1; then
+  log_success "multiplexer: $mux is installed"
+else
+  log_warn "multiplexer is set to $mux, but $mux isn't on PATH"
+  log_dim "  brew bundle --file='$ROOT/brew/Brewfile.$mux'   (or: macstrap install)"
+  problems=$((problems + 1))
+fi
+
+if [[ "$mux" == "herdr" ]] && command -v herdr >/dev/null 2>&1; then
+  if [[ -f "$HERDR_CONFIG" ]] && grep -qxF "# >>> macstrap theme" "$HERDR_CONFIG"; then
+    log_success "herdr config has Macstrap's theme block"
+  else
+    log_warn "no Macstrap theme block in $HERDR_CONFIG"
+    log_dim "  run: macstrap theme set \$(cat '$MACSTRAP_HOME/current-theme' 2>/dev/null || echo catppuccin-mocha)"
+    log_dim "  (if that config defines its own [theme] table, Macstrap leaves it alone by design)"
+    problems=$((problems + 1))
+  fi
+  # herdr's own validator catches typos and stale keys we can't know about
+  if ! herdr config check >/dev/null 2>&1; then
+    log_warn "herdr reports config issues — run: herdr config check"
+    problems=$((problems + 1))
+  fi
+fi
+
+sh_choice="$(shell_get)"
+if [[ "$sh_choice" == "none" ]]; then
+  log_dim "shell: not managed by Macstrap (macstrap shell set <name> to change that)"
+else
+  # Oh My Zsh is a directory rather than a binary on PATH, hence the split.
+  sh_installed=1
+  case "$sh_choice" in
+    omz)
+      sh_fragment="$MACSTRAP_SHELL_DIR/macstrap.zsh"
+      [[ -d "${ZSH:-$HOME/.oh-my-zsh}" ]] || sh_installed=0
+      ;;
+    fish)
+      sh_fragment="$MACSTRAP_SHELL_DIR/macstrap.fish"
+      command -v fish >/dev/null 2>&1 || sh_installed=0
+      ;;
+    nushell)
+      sh_fragment="$MACSTRAP_SHELL_DIR/macstrap.nu"
+      command -v nu >/dev/null 2>&1 || sh_installed=0
+      ;;
+  esac
+
+  if [[ "$sh_installed" == "1" ]]; then
+    log_success "shell: $sh_choice is installed"
+  else
+    log_warn "shell is set to $sh_choice, but it isn't installed"
+    log_dim "  run: macstrap install"
+    problems=$((problems + 1))
+  fi
+
+  # The fragment only exists once install/shell-set has generated it, and it's
+  # what carries Homebrew's env + the starship prompt into that shell.
+  if [[ -f "$sh_fragment" ]]; then
+    log_success "shell fragment generated: $sh_fragment"
+  else
+    log_warn "missing shell fragment $sh_fragment — re-run: macstrap install"
+    problems=$((problems + 1))
+  fi
+
+  login_now="$(dscl . -read "$HOME" UserShell 2>/dev/null | awk '{print $2}')"
+  login_want="$(shell_login_path "$sh_choice")"
+  if [[ "$login_now" == "$login_want" ]]; then
+    log_success "login shell: $login_now"
+  else
+    # Not a problem: changing the login shell is opt-in, and Macstrap's
+    # fragment still works in any shell you start by hand.
+    log_dim "login shell is $login_now, not $login_want (changing it is optional)"
+  fi
+fi
+
+MACSTRAP_HOME="${MACSTRAP_HOME:-$HOME/.macstrap}"
+if [[ -f "$MACSTRAP_HOME/current-theme" ]]; then
+  log_success "current theme: $(cat "$MACSTRAP_HOME/current-theme")"
+else
+  log_warn "no theme applied yet — run: macstrap theme"
+  problems=$((problems + 1))
+fi
+
+echo ""
+if [[ "$problems" -eq 0 ]]; then
+  log_success "Everything looks healthy."
+else
+  log_warn "$problems thing(s) worth a look."
+fi
+exit "$problems"

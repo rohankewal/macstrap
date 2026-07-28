@@ -1,0 +1,12 @@
+-- Generated from palette.json for theme: Catppuccin Mocha — do not hand-edit.
+-- A running Neovim needs :luafile or a restart to pick this up; the TUI
+-- picker tells the user this rather than pretending it's instant.
+return {
+  name = "catppuccin-mocha",
+  colors = {
+    bg = "#1e1e2e", bg_alt = "#181825", fg = "#cdd6f4", fg_muted = "#a6adc8",
+    black = "#45475a", red = "#f38ba8", green = "#a6e3a1", yellow = "#f9e2af",
+    blue = "#89b4fa", magenta = "#cba6f7", cyan = "#94e2d5", white = "#bac2de",
+    accent = "#cba6f7",
+  },
+}

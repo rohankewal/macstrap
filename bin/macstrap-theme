@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Interactive theme picker: fzf list + a live ANSI swatch preview pane.
+# Non-interactive scripting still goes through `theme-set` directly.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+THEMES_DIR="$ROOT/themes"
+
+if ! command -v fzf >/dev/null 2>&1; then
+  echo "fzf is required for the interactive picker (brew install fzf)." >&2
+  exit 1
+fi
+
+MACSTRAP_HOME="${MACSTRAP_HOME:-$HOME/.macstrap}"
+current=""
+[[ -f "$MACSTRAP_HOME/current-theme" ]] && current="$(cat "$MACSTRAP_HOME/current-theme")"
+
+selected="$(
+  find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort |
+    fzf --height=70% --border=rounded --layout=reverse \
+        --prompt="Theme> " \
+        --header="Current: ${current:-none} — enter to apply, esc to cancel" \
+        --preview "cat '$THEMES_DIR/{}/preview.ansi'" \
+        --preview-window=right:45%
+)"
+
+[[ -z "$selected" ]] && { echo "cancelled."; exit 0; }
+
+exec "$ROOT/bin/theme-set" "$selected"

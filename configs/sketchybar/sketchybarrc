@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Macstrap base sketchybar config. macstrap-theme.sh is symlinked in by
+# theme-set and exports MACSTRAP_BG/FG/ACCENT/MUTED; falls back to
+# Catppuccin Mocha if no theme has been applied yet.
+CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=macstrap-theme.sh
+source "$CONFIG_DIR/macstrap-theme.sh" 2>/dev/null || {
+  MACSTRAP_BG="0xff1e1e2e"; MACSTRAP_FG="0xffcdd6f4"
+  MACSTRAP_ACCENT="0xffcba6f7"; MACSTRAP_MUTED="0xffa6adc8"
+}
+
+sketchybar --bar \
+  height=32 \
+  color="$MACSTRAP_BG" \
+  padding_left=10 \
+  padding_right=10 \
+  blur_radius=20 \
+  sticky=on
+
+sketchybar --default \
+  icon.font="Hack Nerd Font:Bold:14.0" \
+  icon.color="$MACSTRAP_FG" \
+  label.font="SF Pro:Semibold:13.0" \
+  label.color="$MACSTRAP_FG" \
+  padding_left=5 \
+  padding_right=5
+
+sketchybar \
+  --add item front_app left \
+  --set front_app icon.drawing=off label.color="$MACSTRAP_ACCENT" \
+                  script="$CONFIG_DIR/plugins/front_app.sh" \
+  --subscribe front_app front_app_switched \
+  \
+  --add item clock right \
+  --set clock update_freq=30 label.color="$MACSTRAP_FG" \
+             script="$CONFIG_DIR/plugins/clock.sh" \
+  \
+  --add item battery right \
+  --set battery update_freq=120 icon.color="$MACSTRAP_MUTED" \
+               script="$CONFIG_DIR/plugins/battery.sh" \
+  --subscribe battery system_woke power_source_change
+
+sketchybar --update

@@ -1,0 +1,7 @@
+# Multiplexer option: herdr (https://herdr.dev).
+# Installed on top of Brewfile.core when the install picks herdr.
+#
+# herdr starts its own server on demand, so nothing here needs a brew
+# service. `brew services start herdr` is optional and only buys you
+# sessions that come back after a reboot.
+brew "herdr"

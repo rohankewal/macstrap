@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# Macstrap base yabai config.
+#
+# `--load-sa` needs the yabai scripting-addition, which needs a partial SIP
+# disable — install.sh gates that behind an explicit confirmation and a
+# NOPASSWD sudoers entry scoped to exactly this binary+flag, it is never
+# silently enabled. Without it yabai still runs, just without border/opacity
+# control — tiling and focus work regardless.
+sudo yabai --load-sa 2>/dev/null || true
+yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+
+yabai -m config layout                bsp
+yabai -m config window_placement      second_child
+yabai -m config top_padding           8
+yabai -m config bottom_padding        8
+yabai -m config left_padding          8
+yabai -m config right_padding         8
+yabai -m config window_gap            8
+yabai -m config auto_balance          off
+yabai -m config split_ratio           0.5
+yabai -m config mouse_follows_focus   off
+yabai -m config focus_follows_mouse   off
+
+echo "yabai config loaded"

@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Shows or switches the shell Macstrap sets up.
+# Usage: macstrap-shell [set <omz|fish|nushell|none>] [--dry-run]
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/log.sh
+source "$ROOT/bin/lib/log.sh"
+# shellcheck source=lib/manifest.sh
+source "$ROOT/bin/lib/manifest.sh"
+# shellcheck source=lib/shell.sh
+source "$ROOT/bin/lib/shell.sh"
+
+sub="" choice=""
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) export DRY_RUN=1 ;;
+    -*)        log_error "unknown flag: $arg"; exit 1 ;;
+    set)       sub="set" ;;
+    *)         choice="$arg" ;;
+  esac
+done
+
+current="$(shell_get)"
+
+if [[ "$sub" != "set" ]]; then
+  echo "$current"
+  exit 0
+fi
+
+if [[ -z "$choice" ]]; then
+  log_error "usage: macstrap shell set <${MACSTRAP_SHELLS[*]}>"
+  exit 1
+fi
+shell_valid "$choice" || {
+  log_error "unknown shell: $choice (choose one of: ${MACSTRAP_SHELLS[*]})"
+  exit 1
+}
+
+if [[ "$choice" == "$current" ]]; then
+  log_dim "already set up for $choice — nothing to do."
+  exit 0
+fi
+
+manifest_init
+log_step "Switching shell setup: $current -> $choice"
+
+# Unhook the old one first, so nothing sources a fragment Macstrap has stopped
+# maintaining. This never uninstalls a shell and never touches your login
+# shell on its own — that's the confirm below.
+shell_unwire "$current"
+shell_set "$choice"
+
+if [[ "$choice" != "none" ]]; then
+  case "$choice" in
+    omz)
+      [[ -d "${ZSH:-$HOME/.oh-my-zsh}" ]] || {
+        log_warn "Oh My Zsh isn't installed yet."
+        log_dim "  macstrap install    (offers to run its official installer)"
+      }
+      ;;
+    fish|nushell)
+      # Nushell's binary is `nu`; fish's matches the choice.
+      case "$choice" in nushell) bin="nu" ;; *) bin="$choice" ;; esac
+      command -v "$bin" >/dev/null 2>&1 || {
+        log_warn "$choice isn't installed yet."
+        log_dim "  brew bundle --file='$ROOT/brew/Brewfile.$choice'    (or: macstrap install)"
+      }
+      ;;
+  esac
+
+  shell_write_fragment "$choice"
+  shell_wire "$choice"
+  shell_set_login "$(shell_login_path "$choice")"
+fi
+
+log_success "Shell setup is now: $choice"
+[[ "$choice" == "none" ]] && log_dim "  your login shell was left as-is — change it with chsh if you want"
+exit 0

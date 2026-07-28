@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Shows or switches the terminal multiplexer Macstrap drives.
+# Usage: macstrap-multiplexer [set <tmux|herdr>] [--dry-run]
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/log.sh
+source "$ROOT/bin/lib/log.sh"
+# shellcheck source=lib/manifest.sh
+source "$ROOT/bin/lib/manifest.sh"
+# shellcheck source=lib/multiplexer.sh
+source "$ROOT/bin/lib/multiplexer.sh"
+
+sub="" choice=""
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) export DRY_RUN=1 ;;
+    -*)        log_error "unknown flag: $arg"; exit 1 ;;
+    set)       sub="set" ;;
+    *)         choice="$arg" ;;
+  esac
+done
+
+current="$(multiplexer_get)"
+
+if [[ "$sub" != "set" ]]; then
+  echo "$current"
+  exit 0
+fi
+
+if [[ -z "$choice" ]]; then
+  log_error "usage: macstrap multiplexer set <${MACSTRAP_MULTIPLEXERS[*]}>"
+  exit 1
+fi
+multiplexer_valid "$choice" || {
+  log_error "unknown multiplexer: $choice (choose one of: ${MACSTRAP_MULTIPLEXERS[*]})"
+  exit 1
+}
+
+if [[ "$choice" == "$current" ]]; then
+  log_dim "already using $choice — nothing to do."
+  exit 0
+fi
+
+manifest_init
+log_step "Switching multiplexer: $current -> $choice"
+multiplexer_set "$choice"
+
+# Not installed automatically: package installs belong to install.sh, so this
+# only points at the one command that does it.
+if ! command -v "$choice" >/dev/null 2>&1; then
+  log_warn "$choice isn't installed yet."
+  log_dim "  brew bundle --file='$ROOT/brew/Brewfile.$choice'    (or: macstrap install)"
+fi
+
+if [[ "$choice" == "tmux" ]]; then
+  manifest_ensure_line "$HOME/.tmux.conf" "source-file $HOME/.config/tmux/macstrap-theme.conf"
+fi
+
+# Stop managing what we're switching away from. tmux's include can stay — it
+# points at a symlink Macstrap keeps in sync either way — but herdr's block is
+# a copy of the colors, so leaving it behind would silently go stale the next
+# time the theme changes.
+if [[ "$current" == "herdr" ]]; then
+  manifest_remove_block "$HERDR_CONFIG" "theme"
+fi
+
+# Re-apply the current theme so the newly selected multiplexer gets colored.
+# Nothing here uninstalls the tool you switched away from.
+MACSTRAP_HOME="${MACSTRAP_HOME:-$HOME/.macstrap}"
+if [[ -f "$MACSTRAP_HOME/current-theme" ]]; then
+  theme="$(<"$MACSTRAP_HOME/current-theme")"
+  # A dry run hasn't recorded the new choice, so hand it over explicitly —
+  # otherwise the preview would show the multiplexer we're leaving.
+  MACSTRAP_MULTIPLEXER="$choice" \
+    "$ROOT/bin/theme-set" "$theme" $( [[ "${DRY_RUN:-0}" == "1" ]] && echo "--dry-run" )
+else
+  log_dim "no theme applied yet — run: macstrap theme"
+fi
+
+log_success "Multiplexer is now: $choice"

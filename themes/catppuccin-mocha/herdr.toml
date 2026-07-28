@@ -1,0 +1,17 @@
+# Generated from palette.json for theme: Catppuccin Mocha — do not hand-edit.
+[theme]
+name = "catppuccin"
+
+[theme.custom]
+panel_bg = "#1e1e2e"
+surface_dim = "#1e1e2e"
+surface0 = "#181825"
+text = "#cdd6f4"
+accent = "#cba6f7"
+red = "#f38ba8"
+green = "#a6e3a1"
+yellow = "#f9e2af"
+blue = "#89b4fa"
+mauve = "#cba6f7"
+teal = "#94e2d5"
+peach = "#cba6f7"

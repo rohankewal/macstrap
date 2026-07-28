@@ -1,0 +1,18 @@
+{
+  "name": "Kanagawa",
+  "variant": "dark",
+  "bg": "#1f1f28",
+  "bg_alt": "#2a2a37",
+  "fg": "#dcd7ba",
+  "fg_muted": "#727169",
+  "black": "#16161d",
+  "red": "#c34043",
+  "green": "#76946a",
+  "yellow": "#c0a36e",
+  "blue": "#7e9cd8",
+  "magenta": "#957fb8",
+  "cyan": "#6a9589",
+  "white": "#dcd7ba",
+  "accent": "#957fb8",
+  "herdr_base": "kanagawa"
+}

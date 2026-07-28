@@ -1,0 +1,17 @@
+# Generated from palette.json for theme: Rose Pine — do not hand-edit.
+[theme]
+name = "rose-pine"
+
+[theme.custom]
+panel_bg = "#191724"
+surface_dim = "#191724"
+surface0 = "#1f1d2e"
+text = "#e0def4"
+accent = "#c4a7e7"
+red = "#eb6f92"
+green = "#31748f"
+yellow = "#f6c177"
+blue = "#9ccfd8"
+mauve = "#c4a7e7"
+teal = "#ebbcba"
+peach = "#c4a7e7"

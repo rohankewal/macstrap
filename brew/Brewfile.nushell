@@ -1,0 +1,3 @@
+# Shell option: Nushell (the binary is `nu`).
+# Installed on top of Brewfile.core when the install picks nushell.
+brew "nushell"

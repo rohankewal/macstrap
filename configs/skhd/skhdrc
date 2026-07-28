@@ -1,0 +1,39 @@
+# Macstrap base skhdrc.
+#
+# Every binding here uses cmd+alt+ctrl+shift together (the "Hyper" chord).
+# install.sh remaps Caps Lock to exactly this combo via Karabiner, so tapping
+# Caps Lock + a key never collides with any app's own Cmd-based shortcuts —
+# unlike plain Cmd, this chord is not claimed by anything else on macOS.
+
+# --- app launching ---
+cmd + alt + ctrl + shift - return : open -a "Ghostty"
+cmd + alt + ctrl + shift - b      : open -a "Firefox"
+cmd + alt + ctrl + shift - e      : open -a "Visual Studio Code"
+cmd + alt + ctrl + shift - f      : open -a "Finder"
+cmd + alt + ctrl + shift - space  : open -a "Raycast"
+
+# --- theme picker ---
+# NOTE: verify Ghostty's current CLI flag for "launch + run command" against
+# the installed version before shipping — this is written against Ghostty's
+# documented -e flag but that surface has changed across releases.
+cmd + alt + ctrl + shift - t : open -na Ghostty --args -e "$HOME/.macstrap/bin/macstrap-theme"
+
+# --- yabai: focus / swap / float ---
+cmd + alt + ctrl + shift - h : yabai -m window --focus west
+cmd + alt + ctrl + shift - j : yabai -m window --focus south
+cmd + alt + ctrl + shift - k : yabai -m window --focus north
+cmd + alt + ctrl + shift - l : yabai -m window --focus east
+
+shift + cmd + alt + ctrl - h : yabai -m window --swap west
+shift + cmd + alt + ctrl - j : yabai -m window --swap south
+shift + cmd + alt + ctrl - k : yabai -m window --swap north
+shift + cmd + alt + ctrl - l : yabai -m window --swap east
+
+cmd + alt + ctrl + shift - g : yabai -m window --toggle float
+cmd + alt + ctrl + shift - m : yabai -m window --toggle zoom-fullscreen
+
+# --- yabai: spaces ---
+cmd + alt + ctrl + shift - 1 : yabai -m space --focus 1
+cmd + alt + ctrl + shift - 2 : yabai -m space --focus 2
+cmd + alt + ctrl + shift - 3 : yabai -m space --focus 3
+cmd + alt + ctrl + shift - 4 : yabai -m space --focus 4
