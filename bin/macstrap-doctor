@@ -109,14 +109,14 @@ else
     problems=$((problems + 1))
   fi
 
-  login_now="$(dscl . -read "$HOME" UserShell 2>/dev/null | awk '{print $2}')"
+  login_now="$(shell_current_login)"
   login_want="$(shell_login_path "$sh_choice")"
   if [[ "$login_now" == "$login_want" ]]; then
     log_success "login shell: $login_now"
   else
     # Not a problem: changing the login shell is opt-in, and Macstrap's
     # fragment still works in any shell you start by hand.
-    log_dim "login shell is $login_now, not $login_want (changing it is optional)"
+    log_dim "login shell is ${login_now:-unknown}, not $login_want (changing it is optional)"
   fi
 fi
 

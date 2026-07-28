@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="956" height="1272" viewBox="0 0 956 1272" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="13">
+<rect width="956" height="1272" rx="10" fill="#1e1e2e"/>
+<path d="M0 10a10 10 0 0 1 10-10h936a10 10 0 0 1 10 10v26H0z" fill="#181825"/>
+<circle cx="20" cy="18.0" r="5.5" fill="#ff5f57"/>
+<circle cx="38" cy="18.0" r="5.5" fill="#febc2e"/>
+<circle cx="56" cy="18.0" r="5.5" fill="#28c840"/>
+<text x="478.0" y="22.0" fill="#6c7086" font-size="11.5" text-anchor="middle">./install.sh --dry-run --multiplexer=herdr --shell=fish</text>
+<text x="18.0" y="54" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="54" fill="#cdd6f4" textLength="280.8" lengthAdjust="spacing" xml:space="preserve"> Macstrap install starting (dry run)</text>
+<text x="18.0" y="74" fill="#6c7086" textLength="335.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would record multiplexer: herdr</text>
+<text x="18.0" y="94" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="94" fill="#cdd6f4" textLength="148.2" lengthAdjust="spacing" xml:space="preserve"> Multiplexer: herdr</text>
+<text x="18.0" y="114" fill="#6c7086" textLength="280.8" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would record shell: fish</text>
+<text x="18.0" y="134" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="134" fill="#cdd6f4" textLength="93.6" lengthAdjust="spacing" xml:space="preserve"> Shell: fish</text>
+<text x="18.0" y="154" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="154" fill="#cdd6f4" textLength="374.4" lengthAdjust="spacing" xml:space="preserve"> Installing core packages via Homebrew Bundle...</text>
+<text x="18.0" y="174" fill="#6c7086" textLength="429.0" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would run: brew bundle --file=Brewfile.core</text>
+<text x="18.0" y="194" fill="#6c7086" textLength="351.0" lengthAdjust="spacing" xml:space="preserve">  [dry-run] already satisfied: Brewfile.herdr</text>
+<text x="18.0" y="214" fill="#6c7086" textLength="429.0" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would run: brew bundle --file=Brewfile.fish</text>
+<text x="18.0" y="234" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="234" fill="#cdd6f4" textLength="288.6" lengthAdjust="spacing" xml:space="preserve"> Linking Macstrap into ~/.macstrap...</text>
+<text x="18.0" y="254" fill="#6c7086" textLength="608.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.macstrap/bin -&gt; /Users/rohan/macstrap/bin</text>
+<text x="18.0" y="274" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="274" fill="#cdd6f4" textLength="187.2" lengthAdjust="spacing" xml:space="preserve"> Linking base configs...</text>
+<text x="18.0" y="294" fill="#6c7086" textLength="780.0" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/skhd/skhdrc -&gt; /Users/rohan/macstrap/configs/skhd/skhdrc</text>
+<text x="18.0" y="314" fill="#6c7086" textLength="811.2" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/yabai/yabairc -&gt; /Users/rohan/macstrap/configs/yabai/yabairc</text>
+<text x="18.0" y="334" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/sketchybar/sketchybarrc -&gt; /Users/rohan/macstrap/configs/sketchybar/sketch</text>
+<text x="18.0" y="354" fill="#6c7086" textLength="46.8" lengthAdjust="spacing" xml:space="preserve">ybarrc</text>
+<text x="18.0" y="374" fill="#6c7086" textLength="889.2" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/sketchybar/plugins -&gt; /Users/rohan/macstrap/configs/sketchybar/plugins</text>
+<text x="18.0" y="394" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/nvim/lua/macstrap/init.lua -&gt; /Users/rohan/macstrap/configs/nvim/lua/macst</text>
+<text x="18.0" y="414" fill="#6c7086" textLength="93.6" lengthAdjust="spacing" xml:space="preserve">rap/init.lua</text>
+<text x="18.0" y="434" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/nvim/after/plugin/macstrap.lua -&gt; /Users/rohan/macstrap/configs/nvim/after</text>
+<text x="18.0" y="454" fill="#6c7086" textLength="156.0" lengthAdjust="spacing" xml:space="preserve">-plugin-macstrap.lua</text>
+<text x="18.0" y="474" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/karabiner/assets/complex_modifications/macstrap-hyper-key.json -&gt; /Users/r</text>
+<text x="18.0" y="494" fill="#6c7086" textLength="429.0" lengthAdjust="spacing" xml:space="preserve">ohan/macstrap/configs/karabiner/macstrap-hyper-key.json</text>
+<text x="18.0" y="514" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="514" fill="#cdd6f4" textLength="358.8" lengthAdjust="spacing" xml:space="preserve"> Wiring theme includes into Ghostty + herdr...</text>
+<text x="18.0" y="534" fill="#6c7086" textLength="764.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would append to /Users/rohan/.config/ghostty/config: config-file = macstrap-theme.conf</text>
+<text x="18.0" y="554" fill="#6c7086" textLength="546.0" lengthAdjust="spacing" xml:space="preserve">  herdr has no include directive — its theme goes in as a marked block</text>
+<text x="18.0" y="574" fill="#6c7086" textLength="600.6" lengthAdjust="spacing" xml:space="preserve">  in /Users/rohan/.config/herdr/config.toml, rewritten on every theme switch.</text>
+<text x="18.0" y="594" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="594" fill="#cdd6f4" textLength="358.8" lengthAdjust="spacing" xml:space="preserve"> Wiring Homebrew&#x27;s env + starship into fish...</text>
+<text x="18.0" y="614" fill="#6c7086" textLength="538.2" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would generate /Users/rohan/.macstrap/shell/macstrap.fish</text>
+<text x="18.0" y="634" fill="#6c7086" textLength="897.0" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/fish/conf.d/macstrap.fish -&gt; /Users/rohan/.macstrap/shell/macstrap.fish</text>
+<text x="18.0" y="674" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="674" fill="#cdd6f4" textLength="592.8" lengthAdjust="spacing" xml:space="preserve"> Optional: make /opt/homebrew/bin/fish your login shell (currently /bin/zsh)</text>
+<text x="18.0" y="694" fill="#6c7086" textLength="444.6" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would offer to chsh to /opt/homebrew/bin/fish</text>
+<text x="18.0" y="714" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="714" fill="#cdd6f4" textLength="351.0" lengthAdjust="spacing" xml:space="preserve"> Applying default theme (catppuccin-mocha)...</text>
+<text x="18.0" y="734" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="734" fill="#cdd6f4" textLength="421.2" lengthAdjust="spacing" xml:space="preserve"> Applying theme: catppuccin-mocha (multiplexer: herdr)</text>
+<text x="18.0" y="754" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/ghostty/macstrap-theme.conf -&gt; /Users/rohan/macstrap/themes/catppuccin-moc</text>
+<text x="18.0" y="774" fill="#6c7086" textLength="117.0" lengthAdjust="spacing" xml:space="preserve">ha/ghostty.conf</text>
+<text x="18.0" y="794" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/nvim/lua/macstrap/theme.lua -&gt; /Users/rohan/macstrap/themes/catppuccin-moc</text>
+<text x="18.0" y="814" fill="#6c7086" textLength="101.4" lengthAdjust="spacing" xml:space="preserve">ha/neovim.lua</text>
+<text x="18.0" y="834" fill="#6c7086" textLength="920.4" lengthAdjust="spacing" xml:space="preserve">  [dry-run] would link /Users/rohan/.config/sketchybar/macstrap-theme.sh -&gt; /Users/rohan/macstrap/themes/catppuccin-mo</text>
+<text x="18.0" y="854" fill="#6c7086" textLength="132.6" lengthAdjust="spacing" xml:space="preserve">cha/sketchybar.sh</text>
+<text x="18.0" y="874" fill="#f9e2af" textLength="7.8" lengthAdjust="spacing" xml:space="preserve">!</text>
+<text x="25.8" y="874" fill="#cdd6f4" textLength="756.6" lengthAdjust="spacing" xml:space="preserve">   /Users/rohan/.config/herdr/config.toml already has its own [theme] section — leaving it alone.</text>
+<text x="18.0" y="894" fill="#6c7086" textLength="577.2" lengthAdjust="spacing" xml:space="preserve">  TOML has no include directive, and a duplicate [theme] table makes herdr</text>
+<text x="18.0" y="914" fill="#6c7086" textLength="585.0" lengthAdjust="spacing" xml:space="preserve">  discard the entire config, so Macstrap won&#x27;t add its block next to yours.</text>
+<text x="18.0" y="934" fill="#6c7086" textLength="553.8" lengthAdjust="spacing" xml:space="preserve">  Delete or comment out your [theme] / [theme.custom] tables and re-run</text>
+<text x="18.0" y="954" fill="#6c7086" textLength="522.6" lengthAdjust="spacing" xml:space="preserve">  &#x27;macstrap theme set &lt;name&gt;&#x27; to let Macstrap drive herdr&#x27;s colors.</text>
+<text x="18.0" y="974" fill="#a6e3a1" textLength="7.8" lengthAdjust="spacing" xml:space="preserve">✓</text>
+<text x="25.8" y="974" fill="#cdd6f4" textLength="280.8" lengthAdjust="spacing" xml:space="preserve"> Dry run complete — no changes made.</text>
+<text x="18.0" y="1014" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="1014" fill="#cdd6f4" textLength="600.6" lengthAdjust="spacing" xml:space="preserve"> Optional: yabai&#x27;s scripting addition (window borders, opacity, full control)</text>
+<text x="18.0" y="1034" fill="#6c7086" textLength="538.2" lengthAdjust="spacing" xml:space="preserve">  This requires partially disabling System Integrity Protection and a</text>
+<text x="18.0" y="1054" fill="#6c7086" textLength="553.8" lengthAdjust="spacing" xml:space="preserve">  reboot into Recovery Mode. It is NOT required for basic tiling/focus.</text>
+<text x="18.0" y="1074" fill="#6c7086" textLength="530.4" lengthAdjust="spacing" xml:space="preserve">  It also can&#x27;t be fully automated here — you&#x27;ll still need to add a</text>
+<text x="18.0" y="1094" fill="#6c7086" textLength="553.8" lengthAdjust="spacing" xml:space="preserve">  sudoers rule yourself so yabai can load it without a password prompt.</text>
+<text x="18.0" y="1114" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="1114" fill="#cdd6f4" textLength="163.8" lengthAdjust="spacing" xml:space="preserve"> Starting services...</text>
+<text x="18.0" y="1134" fill="#6c7086" textLength="522.6" lengthAdjust="spacing" xml:space="preserve">  herdr starts on demand — run &#x27;herdr&#x27;. For sessions that survive a</text>
+<text x="18.0" y="1154" fill="#6c7086" textLength="273.0" lengthAdjust="spacing" xml:space="preserve">  reboot: brew services start herdr</text>
+<text x="18.0" y="1174" fill="#89b4fa" font-weight="bold" textLength="23.4" lengthAdjust="spacing" xml:space="preserve">==&gt;</text>
+<text x="41.4" y="1174" fill="#cdd6f4" textLength="234.0" lengthAdjust="spacing" xml:space="preserve"> Cleaning up Homebrew cache...</text>
+<text x="18.0" y="1214" fill="#a6e3a1" textLength="7.8" lengthAdjust="spacing" xml:space="preserve">✓</text>
+<text x="25.8" y="1214" fill="#cdd6f4" textLength="405.6" lengthAdjust="spacing" xml:space="preserve"> Dry run complete — nothing above was actually done.</text>
+<text x="18.0" y="1234" fill="#6c7086" textLength="304.2" lengthAdjust="spacing" xml:space="preserve">  Re-run without --dry-run to apply it.</text>
+</svg>

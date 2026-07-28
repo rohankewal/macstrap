@@ -80,6 +80,12 @@ cd ~/macstrap
 Prints every symlink, appended line, and package it *would* touch, and changes
 nothing. Worth reading once so nothing below is a surprise.
 
+![A dry run of install.sh, listing every change it would make](docs/media/install.svg)
+
+That's a real dry run, not a mock-up — the images in this README are rendered
+from actual captured output by `scripts/gen-screenshots.sh`. A dry run creates
+no files at all, not even `~/.macstrap`.
+
 ### 3. Run it
 
 ```sh
@@ -148,6 +154,12 @@ Verifies services are running, the Hyper key rule is installed, your
 multiplexer and shell are wired, and a theme is applied. It exits with the
 number of problems it found, so it's safe to use in a script.
 
+![macstrap doctor listing six problems on a machine with nothing installed](docs/media/doctor.svg)
+
+That capture is deliberately from a machine where nothing has been installed
+yet — which is what makes it useful. Every warning names the command that
+fixes it, and the exit code is the count.
+
 ### 6. Optional: yabai's scripting addition
 
 Window borders, opacity, and full window control need a partial SIP disable
@@ -176,6 +188,8 @@ macstrap doctor                health check
 macstrap update                git pull + re-run install
 macstrap remove                reverse everything Macstrap has done
 ```
+
+![macstrap --help output](docs/media/help.svg)
 
 Every command that changes state accepts `--dry-run`.
 
@@ -236,6 +250,8 @@ Seven ship today: `catppuccin-mocha`, `nord`, `gruvbox`, `tokyo-night`,
 whole toolchain. Omarchy's more original themes (lumon, hackerman,
 matte-black) are a deliberate fast-follow: those need palettes extracted from
 Omarchy's own theme files rather than vendored from an existing ecosystem.
+
+![macstrap theme list showing the seven bundled themes](docs/media/themes.svg)
 
 ### Adding your own
 
@@ -441,7 +457,15 @@ brew/Brewfile.*         core, plus one per multiplexer and shell option
 configs/                static app configs, symlinked into place
 themes/<name>/          palette.json (hand-edited) + generated per-app configs
 scripts/gen-theme-configs.sh   regenerates all theme output from palettes
+docs/media/             the terminal images in this README
+scripts/gen-screenshots.sh     regenerates them from real command output
+scripts/ansi-to-svg.py         renders captured ANSI to SVG
 ```
+
+The images are generated, not drawn. `gen-screenshots.sh` runs each command
+for real under a PTY (so they emit their true colors), captures the output,
+and renders it — every command it runs is read-only or a `--dry-run`. If the
+output changes, regenerate and the diff shows it.
 
 ## Known gaps / not yet built
 

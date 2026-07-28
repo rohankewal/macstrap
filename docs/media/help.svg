@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="691" height="392" viewBox="0 0 691 392" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="13">
+<rect width="691" height="392" rx="10" fill="#1e1e2e"/>
+<path d="M0 10a10 10 0 0 1 10-10h671a10 10 0 0 1 10 10v26H0z" fill="#181825"/>
+<circle cx="20" cy="18.0" r="5.5" fill="#ff5f57"/>
+<circle cx="38" cy="18.0" r="5.5" fill="#febc2e"/>
+<circle cx="56" cy="18.0" r="5.5" fill="#28c840"/>
+<text x="345.5" y="22.0" fill="#6c7086" font-size="11.5" text-anchor="middle">macstrap --help</text>
+<text x="18.0" y="54" fill="#cdd6f4" textLength="195.0" lengthAdjust="spacing" xml:space="preserve">macstrap &lt;command&gt; [args]</text>
+<text x="18.0" y="94" fill="#cdd6f4" textLength="70.2" lengthAdjust="spacing" xml:space="preserve">Commands:</text>
+<text x="18.0" y="114" fill="#cdd6f4" textLength="592.8" lengthAdjust="spacing" xml:space="preserve">  install [--dry-run]     Run the full installer. To skip the two questions:</text>
+<text x="18.0" y="134" fill="#cdd6f4" textLength="405.6" lengthAdjust="spacing" xml:space="preserve">                          --multiplexer=&lt;tmux|herdr&gt;</text>
+<text x="18.0" y="154" fill="#cdd6f4" textLength="444.6" lengthAdjust="spacing" xml:space="preserve">                          --shell=&lt;omz|fish|nushell|none&gt;</text>
+<text x="18.0" y="174" fill="#cdd6f4" textLength="538.2" lengthAdjust="spacing" xml:space="preserve">  theme                   Open the interactive theme picker (fzf TUI)</text>
+<text x="18.0" y="194" fill="#cdd6f4" textLength="444.6" lengthAdjust="spacing" xml:space="preserve">  theme set &lt;name&gt;        Apply a theme non-interactively</text>
+<text x="18.0" y="214" fill="#cdd6f4" textLength="405.6" lengthAdjust="spacing" xml:space="preserve">  theme list              List available theme names</text>
+<text x="18.0" y="234" fill="#cdd6f4" textLength="546.0" lengthAdjust="spacing" xml:space="preserve">  multiplexer             Print the multiplexer in use (tmux or herdr)</text>
+<text x="18.0" y="254" fill="#cdd6f4" textLength="585.0" lengthAdjust="spacing" xml:space="preserve">  multiplexer set &lt;name&gt;  Switch multiplexer and re-apply the current theme</text>
+<text x="18.0" y="274" fill="#cdd6f4" textLength="631.8" lengthAdjust="spacing" xml:space="preserve">  shell                   Print the shell setup in use (omz, fish, nushell, none)</text>
+<text x="18.0" y="294" fill="#cdd6f4" textLength="624.0" lengthAdjust="spacing" xml:space="preserve">  shell set &lt;name&gt;        Switch shell setup (offers to change your login shell)</text>
+<text x="18.0" y="314" fill="#cdd6f4" textLength="522.6" lengthAdjust="spacing" xml:space="preserve">  update                  Pull latest + re-run install (idempotent)</text>
+<text x="18.0" y="334" fill="#cdd6f4" textLength="483.6" lengthAdjust="spacing" xml:space="preserve">  remove                  Reverse everything Macstrap has done</text>
+<text x="18.0" y="354" fill="#cdd6f4" textLength="507.0" lengthAdjust="spacing" xml:space="preserve">  doctor                  Check the health of the installed stack</text>
+</svg>

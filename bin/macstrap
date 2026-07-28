@@ -11,8 +11,9 @@ usage() {
 macstrap <command> [args]
 
 Commands:
-  install [--dry-run]     Run the full installer
-                          (--multiplexer=<tmux|herdr> to pick non-interactively)
+  install [--dry-run]     Run the full installer. To skip the two questions:
+                          --multiplexer=<tmux|herdr>
+                          --shell=<omz|fish|nushell|none>
   theme                   Open the interactive theme picker (fzf TUI)
   theme set <name>        Apply a theme non-interactively
   theme list              List available theme names

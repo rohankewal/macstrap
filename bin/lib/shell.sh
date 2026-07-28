@@ -280,6 +280,27 @@ omz_install() {
 
 # --- login shell ------------------------------------------------------------
 
+# shell_current_login -> this account's login shell, or "" if it can't be read.
+#
+# dscl wants a *directory-services record* path, not a filesystem one. Those are
+# both /Users/<shortname> on a stock Mac, which is why passing $HOME here used
+# to appear to work — but on an account whose home lives elsewhere (network or
+# mobile accounts, a renamed home) dscl prints "read: Invalid Path" on *stdout*,
+# so 2>/dev/null doesn't hide it and awk cheerfully reports the login shell as
+# "Invalid". That never matches the target, so the caller re-offers chsh on
+# every run — and worse, "Invalid" lands in the manifest as the shell that
+# `macstrap remove` should restore. Ask by short name, and only believe an
+# absolute path.
+#
+# `|| true` because callers run with set -e -o pipefail, and a user record dscl
+# can't read is a "don't know", not a reason to abort the install.
+shell_current_login() {
+  local current
+  current="$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}' || true)"
+  [[ "$current" == /* ]] || current=""
+  printf '%s' "$current"
+}
+
 # chsh needs the target listed in /etc/shells, and editing that needs sudo —
 # the only part of this feature that does. Both steps are gated behind an
 # explicit confirmation, and the previous shell goes in the manifest so
@@ -294,9 +315,7 @@ shell_set_login() {
   fi
 
   local current
-  # `|| true` because callers run with set -e -o pipefail and a user record
-  # dscl can't read is a "don't know", not a reason to abort the install.
-  current="$(dscl . -read "$HOME" UserShell 2>/dev/null | awk '{print $2}' || true)"
+  current="$(shell_current_login)"
   if [[ "$current" == "$target" ]]; then
     log_dim "  already your login shell: $target"
     return 0

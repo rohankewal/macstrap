@@ -76,7 +76,14 @@ case "$MACSTRAP_SHELL_CHOICE" in
 esac
 for bundle in "${bundles[@]}"; do
   if [[ "${DRY_RUN:-0}" == "1" ]]; then
-    brew bundle check --file="$bundle" || log_dim "  [dry-run] would run: brew bundle --file=$bundle"
+    # Only the exit status matters here; `check` narrates unmet dependencies at
+    # length, which in a dry run reads like a stack of errors rather than the
+    # one thing we want to say — whether this Brewfile has anything left to do.
+    if brew bundle check --file="$bundle" >/dev/null 2>&1; then
+      log_dim "  [dry-run] already satisfied: $(basename "$bundle")"
+    else
+      log_dim "  [dry-run] would run: brew bundle --file=$(basename "$bundle")"
+    fi
   else
     brew bundle --file="$bundle"
   fi
@@ -147,7 +154,11 @@ fi
 # ---------------------------------------------------------------------------
 if [[ ! -f "${MACSTRAP_HOME:-$HOME/.macstrap}/current-theme" ]]; then
   log_step "Applying default theme (catppuccin-mocha)..."
-  DRY_RUN="${DRY_RUN:-0}" "$ROOT/bin/theme-set" catppuccin-mocha
+  # theme-set reads the multiplexer back from ~/.macstrap/multiplexer, which a
+  # dry run deliberately never writes — so without this it would preview the
+  # default (tmux) instead of the one just chosen above.
+  MACSTRAP_MULTIPLEXER="$MULTIPLEXER" DRY_RUN="${DRY_RUN:-0}" \
+    "$ROOT/bin/theme-set" catppuccin-mocha
 fi
 
 # ---------------------------------------------------------------------------
@@ -202,6 +213,11 @@ log_step "Cleaning up Homebrew cache..."
 [[ "${DRY_RUN:-0}" == "1" ]] || brew cleanup -s >/dev/null 2>&1 || true
 
 echo ""
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  log_success "Dry run complete — nothing above was actually done."
+  log_dim "  Re-run without --dry-run to apply it."
+  exit 0
+fi
 log_success "Macstrap installed."
 log_dim "  Next: open Karabiner-Elements > Complex Modifications > Add rule, and"
 log_dim "  enable 'Macstrap Hyper Key' (macOS requires this one manual click —"

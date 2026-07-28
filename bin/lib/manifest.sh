@@ -10,7 +10,12 @@ MACSTRAP_BACKUPS="$MACSTRAP_HOME/backups"
 MACSTRAP_MANIFEST="$MACSTRAP_HOME/state.jsonl"
 DRY_RUN="${DRY_RUN:-0}"
 
+# A dry run must not bring ~/.macstrap into being: "show me what this would do"
+# is the one command people run before they've decided to let it do anything.
+# Nothing writes to the manifest under DRY_RUN anyway — every writer guards —
+# so skipping the mkdir/touch costs nothing.
 manifest_init() {
+  [[ "$DRY_RUN" == "1" ]] && return 0
   mkdir -p "$MACSTRAP_BACKUPS"
   touch "$MACSTRAP_MANIFEST"
 }
