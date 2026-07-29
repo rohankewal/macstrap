@@ -150,16 +150,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 8. Apply a default theme so first boot isn't unstyled
+# 8. Apply a theme — the one already chosen, or the default on a first run
 # ---------------------------------------------------------------------------
-if [[ ! -f "${MACSTRAP_HOME:-$HOME/.macstrap}/current-theme" ]]; then
-  log_step "Applying default theme (catppuccin-mocha)..."
-  # theme-set reads the multiplexer back from ~/.macstrap/multiplexer, which a
-  # dry run deliberately never writes — so without this it would preview the
-  # default (tmux) instead of the one just chosen above.
-  MACSTRAP_MULTIPLEXER="$MULTIPLEXER" DRY_RUN="${DRY_RUN:-0}" \
-    "$ROOT/bin/theme-set" catppuccin-mocha
+# Re-applying rather than skipping is what makes a re-run repair things: theme
+# symlinks point into this checkout, so moving the repo leaves every one of
+# them dangling, and "re-run the installer" has to actually fix that. Doing it
+# unconditionally is cheap — manifest_link no-ops on a link already pointing
+# where it should.
+theme_now="$(cat "${MACSTRAP_HOME:-$HOME/.macstrap}/current-theme" 2>/dev/null || true)"
+if [[ -n "$theme_now" && -d "$ROOT/themes/$theme_now" ]]; then
+  log_step "Re-applying current theme ($theme_now)..."
+else
+  theme_now="catppuccin-mocha"
+  log_step "Applying default theme ($theme_now)..."
 fi
+# theme-set reads the multiplexer back from ~/.macstrap/multiplexer, which a
+# dry run deliberately never writes — so without this it would preview the
+# default (tmux) instead of the one just chosen above.
+MACSTRAP_MULTIPLEXER="$MULTIPLEXER" DRY_RUN="${DRY_RUN:-0}" \
+  "$ROOT/bin/theme-set" "$theme_now"
 
 # ---------------------------------------------------------------------------
 # 9. yabai scripting addition — the one irreversible step, gated explicitly

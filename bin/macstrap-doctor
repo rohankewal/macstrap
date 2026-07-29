@@ -9,6 +9,8 @@ source "$ROOT/bin/lib/log.sh"
 source "$ROOT/bin/lib/multiplexer.sh"
 # shellcheck source=lib/shell.sh
 source "$ROOT/bin/lib/shell.sh"
+# shellcheck source=lib/manifest.sh
+source "$ROOT/bin/lib/manifest.sh"
 
 problems=0
 
@@ -126,6 +128,56 @@ if [[ -f "$MACSTRAP_HOME/current-theme" ]]; then
 else
   log_warn "no theme applied yet — run: macstrap theme"
   problems=$((problems + 1))
+fi
+
+# Every symlink Macstrap made points back into this checkout, so moving or
+# deleting the repo leaves them all dangling — and a dangling symlink is
+# invisible: your terminal and editor just silently stop being themed. The
+# manifest is the authority on what was linked, which keeps this honest as the
+# set of links changes.
+if [[ -s "$MACSTRAP_MANIFEST" ]] && command -v jq >/dev/null 2>&1; then
+  dangling=0 hijacked=0 linked=0
+
+  # A target gets re-linked on every theme switch, so the manifest holds many
+  # entries for it. Tag each line with its position and keep only the newest
+  # per target — and skip targets whose newest entry is an unlink, which is
+  # Macstrap having deliberately stopped managing them.
+  while IFS=$'\t' read -r target source; do
+    [[ -n "$target" ]] || continue
+    if [[ -L "$target" ]]; then
+      if [[ -e "$target" ]]; then
+        linked=$((linked + 1))
+      else
+        log_error "dangling symlink: $target"
+        log_dim  "  -> $source (gone)"
+        dangling=$((dangling + 1))
+      fi
+    elif [[ -e "$target" ]]; then
+      # Not a problem to fix for them: they replaced it on purpose, and
+      # Macstrap's rule is that it never takes a file back over.
+      hijacked=$((hijacked + 1))
+    else
+      log_warn "missing: $target"
+      dangling=$((dangling + 1))
+    fi
+  done < <(jq -rs '
+    to_entries
+    | map(.value + {i: .key})
+    | map(select(.action == "link" or .action == "unlink"))
+    | group_by(.target) | map(max_by(.i))
+    | .[] | select(.action == "link")
+    | [.target, .source] | @tsv
+  ' "$MACSTRAP_MANIFEST" 2>/dev/null)
+
+  if [[ "$dangling" -gt 0 ]]; then
+    problems=$((problems + dangling))
+    log_dim "  Macstrap's symlinks point into its checkout ($ROOT)."
+    log_dim "  If you moved or deleted it, put it back and run: macstrap install"
+  else
+    log_success "all $linked linked files resolve"
+  fi
+  [[ "$hijacked" -gt 0 ]] && \
+    log_dim "$hijacked file(s) Macstrap linked have since been replaced by you — left alone"
 fi
 
 echo ""

@@ -70,6 +70,10 @@ cd ~/macstrap
 > `~/.macstrap/bin` points at `bin/`, and every active theme file points into
 > `themes/`. Move or delete the clone and your configs break. `~/macstrap` or
 > `~/.config/macstrap` are both fine; Downloads is not.
+>
+> If you do move it, it's recoverable and not silent: `macstrap doctor` lists
+> every symlink that no longer resolves, and re-running `./install.sh` from the
+> new location re-points all of them.
 
 ### 2. Preview everything
 
@@ -416,7 +420,8 @@ Four things it deliberately leaves to you, and prints as reminders:
 | Theme applied but Ghostty unchanged | Existing panes don't restyle; open a new one, or `Cmd+Shift+,` to reload. |
 | Theme applied but Neovim unchanged | Restart it, or `:luafile ~/.config/nvim/lua/macstrap/init.lua`. |
 | herdr colors didn't change | Your `config.toml` probably has its own `[theme]` table — Macstrap skips it on purpose and says so. |
-| Everything broke after moving the repo | The clone has to stay where it was. Move it back, or re-run `./install.sh` from the new location. |
+| Themes silently stopped applying | Usually a moved clone — the symlinks now dangle. `macstrap doctor` names every broken one. |
+| Everything broke after moving the repo | Re-run `./install.sh` from the new location; it re-points every symlink, including the active theme's. Moving the clone back works too. |
 
 Start with `macstrap doctor` — it catches most of the above.
 
